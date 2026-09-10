@@ -1,0 +1,15 @@
+# Build output
+bin/
+*.exe
+*.out
+
+# Runtime data
+data/
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Environment files
+.env
