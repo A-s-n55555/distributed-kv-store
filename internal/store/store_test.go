@@ -89,7 +89,7 @@ func TestConcurrentPut(t *testing.T) {
 		go func(key int) {
 			defer wg.Done()
 
-			if err := m.Put(key, "value"); err != nil {
+			if err := m.Put(int64(key), "value"); err != nil {
 				t.Errorf("Put(%d) error = %v", key, err)
 			}
 		}(i)
@@ -98,7 +98,7 @@ func TestConcurrentPut(t *testing.T) {
 	wg.Wait()
 
 	for i := 0; i < 100; i++ {
-		if value, exists := m.Get(i); value != "value" || !exists {
+		if value, exists := m.Get(int64(i)); value != "value" || !exists {
 			t.Errorf("key %d was not stored correctly", i)
 		}
 	}

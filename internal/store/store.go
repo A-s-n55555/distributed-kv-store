@@ -9,7 +9,7 @@ import (
 
 type Map struct {
 	mu   sync.RWMutex
-	data map[int]string
+	data map[int64]string
 	wal  *wal.Log
 }
 
@@ -20,7 +20,7 @@ func NewMap(log *wal.Log) (*Map, error) {
 	}
 
 	m := &Map{
-		data: make(map[int]string),
+		data: make(map[int64]string),
 		wal:  log,
 	}
 
@@ -43,7 +43,7 @@ func NewMap(log *wal.Log) (*Map, error) {
 	return m, nil
 }
 
-func (m *Map) Put(key int, value string) error {
+func (m *Map) Put(key int64, value string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -60,7 +60,7 @@ func (m *Map) Put(key int, value string) error {
 	return nil
 }
 
-func (m *Map) Get(key int) (string, bool) {
+func (m *Map) Get(key int64) (string, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -68,7 +68,7 @@ func (m *Map) Get(key int) (string, bool) {
 	return value, exists
 }
 
-func (m *Map) Delete(key int) error {
+func (m *Map) Delete(key int64) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

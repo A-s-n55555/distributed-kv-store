@@ -10,7 +10,7 @@ import (
 
 type Entry struct {
 	Operation string `json:"operation"`
-	Key       int    `json:"key"`
+	Key       int64  `json:"key"`
 	Value     string `json:"value,omitempty"`
 }
 

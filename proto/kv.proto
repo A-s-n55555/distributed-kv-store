@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package kv;
+
+option go_package = "github.com/A-s-n55555/distributed-kv-store/proto;kvpb";
+
+service KeyValueStore {
+  rpc Put(PutRequest) returns (PutResponse);
+  rpc Get(GetRequest) returns (GetResponse);
+  rpc Delete(DeleteRequest) returns (DeleteResponse);
+}
+
+message PutRequest {
+  int64 key = 1;
+  string value = 2;
+}
+
+message PutResponse {}
+
+message GetRequest {
+  int64 key = 1;
+}
+
+message GetResponse {
+  string value = 1;
+  bool found = 2;
+}
+
+message DeleteRequest {
+  int64 key = 1;
+}
+
+message DeleteResponse {}
