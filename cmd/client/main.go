@@ -14,12 +14,17 @@ import (
 
 func main() {
 	operation := flag.String("op", "get", "Operation: put, get, or delete")
+	address := flag.String(
+		"address",
+		"localhost:50051",
+		"gRPC server address",
+	)
 	key := flag.Int64("key", 0, "Key to use")
 	value := flag.String("value", "", "Value for put operation")
 	flag.Parse()
 
 	connection, err := grpc.NewClient(
-		"localhost:50051",
+		*address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
