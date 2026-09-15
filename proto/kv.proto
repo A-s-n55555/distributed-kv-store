@@ -8,6 +8,10 @@ service KeyValueStore {
   rpc Put(PutRequest) returns (PutResponse);
   rpc Get(GetRequest) returns (GetResponse);
   rpc Delete(DeleteRequest) returns (DeleteResponse);
+
+  rpc ReplicaPut(PutRequest) returns (PutResponse);
+  rpc ReplicaGet(GetRequest) returns (GetResponse);
+  rpc ReplicaDelete(DeleteRequest) returns (DeleteResponse);
 }
 
 message PutRequest {

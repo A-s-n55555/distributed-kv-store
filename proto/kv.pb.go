@@ -303,11 +303,16 @@ const file_proto_kv_proto_rawDesc = "" +
 	"\x05found\x18\x02 \x01(\bR\x05found\"!\n" +
 	"\rDeleteRequest\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x03R\x03key\"\x10\n" +
-	"\x0eDeleteResponse2\x90\x01\n" +
+	"\x0eDeleteResponse2\xa6\x02\n" +
 	"\rKeyValueStore\x12&\n" +
 	"\x03Put\x12\x0e.kv.PutRequest\x1a\x0f.kv.PutResponse\x12&\n" +
 	"\x03Get\x12\x0e.kv.GetRequest\x1a\x0f.kv.GetResponse\x12/\n" +
-	"\x06Delete\x12\x11.kv.DeleteRequest\x1a\x12.kv.DeleteResponseB7Z5github.com/A-s-n55555/distributed-kv-store/proto;kvpbb\x06proto3"
+	"\x06Delete\x12\x11.kv.DeleteRequest\x1a\x12.kv.DeleteResponse\x12-\n" +
+	"\n" +
+	"ReplicaPut\x12\x0e.kv.PutRequest\x1a\x0f.kv.PutResponse\x12-\n" +
+	"\n" +
+	"ReplicaGet\x12\x0e.kv.GetRequest\x1a\x0f.kv.GetResponse\x126\n" +
+	"\rReplicaDelete\x12\x11.kv.DeleteRequest\x1a\x12.kv.DeleteResponseB7Z5github.com/A-s-n55555/distributed-kv-store/proto;kvpbb\x06proto3"
 
 var (
 	file_proto_kv_proto_rawDescOnce sync.Once
@@ -334,11 +339,17 @@ var file_proto_kv_proto_depIdxs = []int32{
 	0, // 0: kv.KeyValueStore.Put:input_type -> kv.PutRequest
 	2, // 1: kv.KeyValueStore.Get:input_type -> kv.GetRequest
 	4, // 2: kv.KeyValueStore.Delete:input_type -> kv.DeleteRequest
-	1, // 3: kv.KeyValueStore.Put:output_type -> kv.PutResponse
-	3, // 4: kv.KeyValueStore.Get:output_type -> kv.GetResponse
-	5, // 5: kv.KeyValueStore.Delete:output_type -> kv.DeleteResponse
-	3, // [3:6] is the sub-list for method output_type
-	0, // [0:3] is the sub-list for method input_type
+	0, // 3: kv.KeyValueStore.ReplicaPut:input_type -> kv.PutRequest
+	2, // 4: kv.KeyValueStore.ReplicaGet:input_type -> kv.GetRequest
+	4, // 5: kv.KeyValueStore.ReplicaDelete:input_type -> kv.DeleteRequest
+	1, // 6: kv.KeyValueStore.Put:output_type -> kv.PutResponse
+	3, // 7: kv.KeyValueStore.Get:output_type -> kv.GetResponse
+	5, // 8: kv.KeyValueStore.Delete:output_type -> kv.DeleteResponse
+	1, // 9: kv.KeyValueStore.ReplicaPut:output_type -> kv.PutResponse
+	3, // 10: kv.KeyValueStore.ReplicaGet:output_type -> kv.GetResponse
+	5, // 11: kv.KeyValueStore.ReplicaDelete:output_type -> kv.DeleteResponse
+	6, // [6:12] is the sub-list for method output_type
+	0, // [0:6] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

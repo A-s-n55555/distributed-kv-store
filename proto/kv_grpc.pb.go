@@ -19,9 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	KeyValueStore_Put_FullMethodName    = "/kv.KeyValueStore/Put"
-	KeyValueStore_Get_FullMethodName    = "/kv.KeyValueStore/Get"
-	KeyValueStore_Delete_FullMethodName = "/kv.KeyValueStore/Delete"
+	KeyValueStore_Put_FullMethodName           = "/kv.KeyValueStore/Put"
+	KeyValueStore_Get_FullMethodName           = "/kv.KeyValueStore/Get"
+	KeyValueStore_Delete_FullMethodName        = "/kv.KeyValueStore/Delete"
+	KeyValueStore_ReplicaPut_FullMethodName    = "/kv.KeyValueStore/ReplicaPut"
+	KeyValueStore_ReplicaGet_FullMethodName    = "/kv.KeyValueStore/ReplicaGet"
+	KeyValueStore_ReplicaDelete_FullMethodName = "/kv.KeyValueStore/ReplicaDelete"
 )
 
 // KeyValueStoreClient is the client API for KeyValueStore service.
@@ -31,6 +34,9 @@ type KeyValueStoreClient interface {
 	Put(ctx context.Context, in *PutRequest, opts ...grpc.CallOption) (*PutResponse, error)
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
 	Delete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
+	ReplicaPut(ctx context.Context, in *PutRequest, opts ...grpc.CallOption) (*PutResponse, error)
+	ReplicaGet(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
+	ReplicaDelete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
 }
 
 type keyValueStoreClient struct {
@@ -71,6 +77,36 @@ func (c *keyValueStoreClient) Delete(ctx context.Context, in *DeleteRequest, opt
 	return out, nil
 }
 
+func (c *keyValueStoreClient) ReplicaPut(ctx context.Context, in *PutRequest, opts ...grpc.CallOption) (*PutResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PutResponse)
+	err := c.cc.Invoke(ctx, KeyValueStore_ReplicaPut_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *keyValueStoreClient) ReplicaGet(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetResponse)
+	err := c.cc.Invoke(ctx, KeyValueStore_ReplicaGet_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *keyValueStoreClient) ReplicaDelete(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteResponse)
+	err := c.cc.Invoke(ctx, KeyValueStore_ReplicaDelete_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KeyValueStoreServer is the server API for KeyValueStore service.
 // All implementations must embed UnimplementedKeyValueStoreServer
 // for forward compatibility.
@@ -78,6 +114,9 @@ type KeyValueStoreServer interface {
 	Put(context.Context, *PutRequest) (*PutResponse, error)
 	Get(context.Context, *GetRequest) (*GetResponse, error)
 	Delete(context.Context, *DeleteRequest) (*DeleteResponse, error)
+	ReplicaPut(context.Context, *PutRequest) (*PutResponse, error)
+	ReplicaGet(context.Context, *GetRequest) (*GetResponse, error)
+	ReplicaDelete(context.Context, *DeleteRequest) (*DeleteResponse, error)
 	mustEmbedUnimplementedKeyValueStoreServer()
 }
 
@@ -96,6 +135,15 @@ func (UnimplementedKeyValueStoreServer) Get(context.Context, *GetRequest) (*GetR
 }
 func (UnimplementedKeyValueStoreServer) Delete(context.Context, *DeleteRequest) (*DeleteResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedKeyValueStoreServer) ReplicaPut(context.Context, *PutRequest) (*PutResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReplicaPut not implemented")
+}
+func (UnimplementedKeyValueStoreServer) ReplicaGet(context.Context, *GetRequest) (*GetResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReplicaGet not implemented")
+}
+func (UnimplementedKeyValueStoreServer) ReplicaDelete(context.Context, *DeleteRequest) (*DeleteResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReplicaDelete not implemented")
 }
 func (UnimplementedKeyValueStoreServer) mustEmbedUnimplementedKeyValueStoreServer() {}
 func (UnimplementedKeyValueStoreServer) testEmbeddedByValue()                       {}
@@ -172,6 +220,60 @@ func _KeyValueStore_Delete_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KeyValueStore_ReplicaPut_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeyValueStoreServer).ReplicaPut(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KeyValueStore_ReplicaPut_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeyValueStoreServer).ReplicaPut(ctx, req.(*PutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KeyValueStore_ReplicaGet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeyValueStoreServer).ReplicaGet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KeyValueStore_ReplicaGet_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeyValueStoreServer).ReplicaGet(ctx, req.(*GetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KeyValueStore_ReplicaDelete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeyValueStoreServer).ReplicaDelete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KeyValueStore_ReplicaDelete_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeyValueStoreServer).ReplicaDelete(ctx, req.(*DeleteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KeyValueStore_ServiceDesc is the grpc.ServiceDesc for KeyValueStore service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -190,6 +292,18 @@ var KeyValueStore_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Delete",
 			Handler:    _KeyValueStore_Delete_Handler,
+		},
+		{
+			MethodName: "ReplicaPut",
+			Handler:    _KeyValueStore_ReplicaPut_Handler,
+		},
+		{
+			MethodName: "ReplicaGet",
+			Handler:    _KeyValueStore_ReplicaGet_Handler,
+		},
+		{
+			MethodName: "ReplicaDelete",
+			Handler:    _KeyValueStore_ReplicaDelete_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

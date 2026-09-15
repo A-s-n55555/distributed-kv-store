@@ -25,11 +25,59 @@ func main() {
 		"node-1=localhost:50051,node-2=localhost:50052",
 		"Cluster nodes: node-id=address,node-id=address",
 	)
+	replicationFactor := flag.Int(
+		"replication-factor",
+		2,
+		"Number of physical copies stored for each key",
+	)
+	readQuorum := flag.Int(
+		"read-quorum",
+		1,
+		"Number of successful replica reads required",
+	)
+
+	writeQuorum := flag.Int(
+		"write-quorum",
+		2,
+		"Number of successful replica writes required",
+	)
 	flag.Parse()
 
 	clusterRing, err := buildRing(*nodes)
 	if err != nil {
 		log.Fatalf("failed to build ring: %v", err)
+	}
+	if *replicationFactor <= 0 {
+		log.Fatalf(
+			"replication factor must be greater than zero",
+		)
+	}
+
+	if *replicationFactor > clusterRing.NodeCount() {
+		log.Fatalf(
+			"replication factor %d exceeds physical node count %d",
+			*replicationFactor,
+			clusterRing.NodeCount(),
+		)
+	}
+	if *readQuorum <= 0 || *readQuorum > *replicationFactor {
+		log.Fatalf(
+			"read quorum must be between 1 and replication factor %d",
+			*replicationFactor,
+		)
+	}
+
+	if *writeQuorum <= 0 || *writeQuorum > *replicationFactor {
+		log.Fatalf(
+			"write quorum must be between 1 and replication factor %d",
+			*replicationFactor,
+		)
+	}
+
+	if *readQuorum+*writeQuorum <= *replicationFactor {
+		log.Printf(
+			"warning: R + W <= N; read and write quorums may not overlap",
+		)
 	}
 
 	walPath := filepath.Join(*dataDir, *nodeID, "wal.log")
@@ -54,14 +102,24 @@ func main() {
 
 	kvpb.RegisterKeyValueStoreServer(
 		grpcServer,
-		server.New(kvStore, clusterRing, *nodeID),
+		server.New(
+			kvStore,
+			clusterRing,
+			*nodeID,
+			*replicationFactor,
+			*readQuorum,
+			*writeQuorum,
+		),
 	)
 
 	log.Printf(
-		"node %s listening on %s; WAL: %s",
+		"node %s listening on %s; WAL: %s; N=%d R=%d W=%d",
 		*nodeID,
 		*address,
 		walPath,
+		*replicationFactor,
+		*readQuorum,
+		*writeQuorum,
 	)
 
 	if err := grpcServer.Serve(listener); err != nil {

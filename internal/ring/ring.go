@@ -18,16 +18,16 @@ type virtualNode struct {
 }
 
 type Ring struct {
-	mu       sync.RWMutex
-	replicas int
-	nodes    map[string]Node
-	entries  []virtualNode
+	mu               sync.RWMutex
+	virtualNodeCount int
+	nodes            map[string]Node
+	entries          []virtualNode
 }
 
-func New(replicas int) *Ring {
+func New(virtualNodeCount int) *Ring {
 	return &Ring{
-		replicas: replicas,
-		nodes:    make(map[string]Node),
+		virtualNodeCount: virtualNodeCount,
+		nodes:            make(map[string]Node),
 	}
 }
 
@@ -41,7 +41,7 @@ func (r *Ring) AddNode(node Node) {
 
 	r.nodes[node.ID] = node
 
-	for i := 0; i < r.replicas; i++ {
+	for i := 0; i < r.virtualNodeCount; i++ {
 		position := hash(fmt.Sprintf("%s#%d", node.ID, i))
 
 		r.entries = append(r.entries, virtualNode{
@@ -53,6 +53,75 @@ func (r *Ring) AddNode(node Node) {
 	sort.Slice(r.entries, func(i, j int) bool {
 		return r.entries[i].position < r.entries[j].position
 	})
+}
+
+// NodeCount returns the number of distinct physical nodes in the ring.
+func (r *Ring) NodeCount() int {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	return len(r.nodes)
+}
+
+func (r *Ring) GetReplicas(
+	key string,
+	replicationFactor int,
+) []Node {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	if len(r.entries) == 0 || replicationFactor <= 0 {
+		return nil
+	}
+
+	// Replicas cannot exceed the number of physical nodes.
+	if replicationFactor > len(r.nodes) {
+		replicationFactor = len(r.nodes)
+	}
+
+	position := hash(key)
+
+	startIndex := sort.Search(
+		len(r.entries),
+		func(i int) bool {
+			return r.entries[i].position >= position
+		},
+	)
+
+	// Wrap around to the beginning of the ring.
+	if startIndex == len(r.entries) {
+		startIndex = 0
+	}
+
+	replicas := make([]Node, 0, replicationFactor)
+
+	// Used as a set to prevent selecting the same physical node twice.
+	selectedNodeIDs := make(
+		map[string]struct{},
+		replicationFactor,
+	)
+
+	for offset := 0; offset < len(r.entries) &&
+		len(replicas) < replicationFactor; offset++ {
+
+		index := (startIndex + offset) % len(r.entries)
+		entry := r.entries[index]
+
+		if _, alreadySelected :=
+			selectedNodeIDs[entry.nodeID]; alreadySelected {
+			continue
+		}
+
+		node, exists := r.nodes[entry.nodeID]
+		if !exists {
+			continue
+		}
+
+		replicas = append(replicas, node)
+		selectedNodeIDs[entry.nodeID] = struct{}{}
+	}
+
+	return replicas
 }
 
 func (r *Ring) GetNode(key string) (Node, bool) {

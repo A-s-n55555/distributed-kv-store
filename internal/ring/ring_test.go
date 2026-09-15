@@ -65,3 +65,112 @@ func TestAddNodeCreatesVirtualNodes(t *testing.T) {
 		t.Fatalf("duplicate node added virtual nodes")
 	}
 }
+func TestGetReplicasFromEmptyRing(t *testing.T) {
+	ring := New(3)
+
+	replicas := ring.GetReplicas("user:1", 2)
+
+	if len(replicas) != 0 {
+		t.Fatalf(
+			"GetReplicas() returned %d nodes; want 0",
+			len(replicas),
+		)
+	}
+}
+
+func TestGetReplicasReturnsDistinctPhysicalNodes(
+	t *testing.T,
+) {
+	ring := New(10)
+
+	ring.AddNode(Node{
+		ID:      "node-1",
+		Address: "localhost:50051",
+	})
+
+	ring.AddNode(Node{
+		ID:      "node-2",
+		Address: "localhost:50052",
+	})
+
+	replicas := ring.GetReplicas("user:42", 2)
+
+	if len(replicas) != 2 {
+		t.Fatalf(
+			"GetReplicas() returned %d nodes; want 2",
+			len(replicas),
+		)
+	}
+
+	if replicas[0].ID == replicas[1].ID {
+		t.Fatalf(
+			"GetReplicas() returned duplicate physical node %q",
+			replicas[0].ID,
+		)
+	}
+
+	primary, found := ring.GetNode("user:42")
+	if !found {
+		t.Fatal("GetNode() did not find the primary node")
+	}
+
+	if replicas[0].ID != primary.ID {
+		t.Fatalf(
+			"first replica = %q; want primary node %q",
+			replicas[0].ID,
+			primary.ID,
+		)
+	}
+}
+
+func TestGetReplicasLimitsFactorToPhysicalNodeCount(
+	t *testing.T,
+) {
+	ring := New(10)
+
+	ring.AddNode(Node{
+		ID:      "node-1",
+		Address: "localhost:50051",
+	})
+
+	ring.AddNode(Node{
+		ID:      "node-2",
+		Address: "localhost:50052",
+	})
+
+	// Requests five replicas, but only two physical nodes exist.
+	replicas := ring.GetReplicas("user:42", 5)
+
+	if len(replicas) != 2 {
+		t.Fatalf(
+			"GetReplicas() returned %d nodes; want 2",
+			len(replicas),
+		)
+	}
+}
+func TestNodeCountReturnsPhysicalNodeCount(t *testing.T) {
+	ring := New(10)
+
+	node1 := Node{
+		ID:      "node-1",
+		Address: "localhost:50051",
+	}
+
+	node2 := Node{
+		ID:      "node-2",
+		Address: "localhost:50052",
+	}
+
+	ring.AddNode(node1)
+	ring.AddNode(node2)
+
+	// Adding the same node again must not increase the count.
+	ring.AddNode(node1)
+
+	if ring.NodeCount() != 2 {
+		t.Fatalf(
+			"NodeCount() = %d; want 2",
+			ring.NodeCount(),
+		)
+	}
+}
