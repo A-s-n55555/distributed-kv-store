@@ -2,6 +2,7 @@ package wal
 
 import (
 	"encoding/json"
+	"github.com/A-s-n55555/distributed-kv-store/internal/version"
 	"io"
 	"os"
 	"path/filepath"
@@ -9,9 +10,10 @@ import (
 )
 
 type Entry struct {
-	Operation string `json:"operation"`
-	Key       int64  `json:"key"`
-	Value     string `json:"value,omitempty"`
+	Operation string        `json:"operation"`
+	Key       int64         `json:"key"`
+	Value     string        `json:"value,omitempty"`
+	Clock     version.Clock `json:"clock,omitempty"`
 }
 
 type Log struct {

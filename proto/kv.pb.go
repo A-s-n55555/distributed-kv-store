@@ -285,6 +285,211 @@ func (*DeleteResponse) Descriptor() ([]byte, []int) {
 	return file_proto_kv_proto_rawDescGZIP(), []int{5}
 }
 
+// A value or deletion together with its causal version.
+type VersionedRecord struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	Clock         map[string]uint64      `protobuf:"bytes,2,rep,name=clock,proto3" json:"clock,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	Deleted       bool                   `protobuf:"varint,3,opt,name=deleted,proto3" json:"deleted,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VersionedRecord) Reset() {
+	*x = VersionedRecord{}
+	mi := &file_proto_kv_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VersionedRecord) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VersionedRecord) ProtoMessage() {}
+
+func (x *VersionedRecord) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_kv_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VersionedRecord.ProtoReflect.Descriptor instead.
+func (*VersionedRecord) Descriptor() ([]byte, []int) {
+	return file_proto_kv_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *VersionedRecord) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+func (x *VersionedRecord) GetClock() map[string]uint64 {
+	if x != nil {
+		return x.Clock
+	}
+	return nil
+}
+
+func (x *VersionedRecord) GetDeleted() bool {
+	if x != nil {
+		return x.Deleted
+	}
+	return false
+}
+
+// Requests that a replica apply a complete versioned record.
+type ReplicaRecordRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           int64                  `protobuf:"varint,1,opt,name=key,proto3" json:"key,omitempty"`
+	Record        *VersionedRecord       `protobuf:"bytes,2,opt,name=record,proto3" json:"record,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReplicaRecordRequest) Reset() {
+	*x = ReplicaRecordRequest{}
+	mi := &file_proto_kv_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReplicaRecordRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReplicaRecordRequest) ProtoMessage() {}
+
+func (x *ReplicaRecordRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_kv_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReplicaRecordRequest.ProtoReflect.Descriptor instead.
+func (*ReplicaRecordRequest) Descriptor() ([]byte, []int) {
+	return file_proto_kv_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ReplicaRecordRequest) GetKey() int64 {
+	if x != nil {
+		return x.Key
+	}
+	return 0
+}
+
+func (x *ReplicaRecordRequest) GetRecord() *VersionedRecord {
+	if x != nil {
+		return x.Record
+	}
+	return nil
+}
+
+// Acknowledges successful processing.
+// An outdated or identical record may be ignored by the store.
+type ReplicaRecordResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReplicaRecordResponse) Reset() {
+	*x = ReplicaRecordResponse{}
+	mi := &file_proto_kv_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReplicaRecordResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReplicaRecordResponse) ProtoMessage() {}
+
+func (x *ReplicaRecordResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_kv_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReplicaRecordResponse.ProtoReflect.Descriptor instead.
+func (*ReplicaRecordResponse) Descriptor() ([]byte, []int) {
+	return file_proto_kv_proto_rawDescGZIP(), []int{8}
+}
+
+// Returns metadata, including deletion tombstones.
+type ReplicaRecordReadResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Record        *VersionedRecord       `protobuf:"bytes,1,opt,name=record,proto3" json:"record,omitempty"`
+	Exists        bool                   `protobuf:"varint,2,opt,name=exists,proto3" json:"exists,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReplicaRecordReadResponse) Reset() {
+	*x = ReplicaRecordReadResponse{}
+	mi := &file_proto_kv_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReplicaRecordReadResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReplicaRecordReadResponse) ProtoMessage() {}
+
+func (x *ReplicaRecordReadResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_kv_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReplicaRecordReadResponse.ProtoReflect.Descriptor instead.
+func (*ReplicaRecordReadResponse) Descriptor() ([]byte, []int) {
+	return file_proto_kv_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ReplicaRecordReadResponse) GetRecord() *VersionedRecord {
+	if x != nil {
+		return x.Record
+	}
+	return nil
+}
+
+func (x *ReplicaRecordReadResponse) GetExists() bool {
+	if x != nil {
+		return x.Exists
+	}
+	return false
+}
+
 var File_proto_kv_proto protoreflect.FileDescriptor
 
 const file_proto_kv_proto_rawDesc = "" +
@@ -303,7 +508,22 @@ const file_proto_kv_proto_rawDesc = "" +
 	"\x05found\x18\x02 \x01(\bR\x05found\"!\n" +
 	"\rDeleteRequest\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\x03R\x03key\"\x10\n" +
-	"\x0eDeleteResponse2\xa6\x02\n" +
+	"\x0eDeleteResponse\"\xb1\x01\n" +
+	"\x0fVersionedRecord\x12\x14\n" +
+	"\x05value\x18\x01 \x01(\tR\x05value\x124\n" +
+	"\x05clock\x18\x02 \x03(\v2\x1e.kv.VersionedRecord.ClockEntryR\x05clock\x12\x18\n" +
+	"\adeleted\x18\x03 \x01(\bR\adeleted\x1a8\n" +
+	"\n" +
+	"ClockEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x04R\x05value:\x028\x01\"U\n" +
+	"\x14ReplicaRecordRequest\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\x03R\x03key\x12+\n" +
+	"\x06record\x18\x02 \x01(\v2\x13.kv.VersionedRecordR\x06record\"\x17\n" +
+	"\x15ReplicaRecordResponse\"`\n" +
+	"\x19ReplicaRecordReadResponse\x12+\n" +
+	"\x06record\x18\x01 \x01(\v2\x13.kv.VersionedRecordR\x06record\x12\x16\n" +
+	"\x06exists\x18\x02 \x01(\bR\x06exists2\xb5\x03\n" +
 	"\rKeyValueStore\x12&\n" +
 	"\x03Put\x12\x0e.kv.PutRequest\x1a\x0f.kv.PutResponse\x12&\n" +
 	"\x03Get\x12\x0e.kv.GetRequest\x1a\x0f.kv.GetResponse\x12/\n" +
@@ -312,7 +532,9 @@ const file_proto_kv_proto_rawDesc = "" +
 	"ReplicaPut\x12\x0e.kv.PutRequest\x1a\x0f.kv.PutResponse\x12-\n" +
 	"\n" +
 	"ReplicaGet\x12\x0e.kv.GetRequest\x1a\x0f.kv.GetResponse\x126\n" +
-	"\rReplicaDelete\x12\x11.kv.DeleteRequest\x1a\x12.kv.DeleteResponseB7Z5github.com/A-s-n55555/distributed-kv-store/proto;kvpbb\x06proto3"
+	"\rReplicaDelete\x12\x11.kv.DeleteRequest\x1a\x12.kv.DeleteResponse\x12I\n" +
+	"\x12ApplyReplicaRecord\x12\x18.kv.ReplicaRecordRequest\x1a\x19.kv.ReplicaRecordResponse\x12B\n" +
+	"\x11ReadReplicaRecord\x12\x0e.kv.GetRequest\x1a\x1d.kv.ReplicaRecordReadResponseB7Z5github.com/A-s-n55555/distributed-kv-store/proto;kvpbb\x06proto3"
 
 var (
 	file_proto_kv_proto_rawDescOnce sync.Once
@@ -326,33 +548,45 @@ func file_proto_kv_proto_rawDescGZIP() []byte {
 	return file_proto_kv_proto_rawDescData
 }
 
-var file_proto_kv_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_proto_kv_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_proto_kv_proto_goTypes = []any{
-	(*PutRequest)(nil),     // 0: kv.PutRequest
-	(*PutResponse)(nil),    // 1: kv.PutResponse
-	(*GetRequest)(nil),     // 2: kv.GetRequest
-	(*GetResponse)(nil),    // 3: kv.GetResponse
-	(*DeleteRequest)(nil),  // 4: kv.DeleteRequest
-	(*DeleteResponse)(nil), // 5: kv.DeleteResponse
+	(*PutRequest)(nil),                // 0: kv.PutRequest
+	(*PutResponse)(nil),               // 1: kv.PutResponse
+	(*GetRequest)(nil),                // 2: kv.GetRequest
+	(*GetResponse)(nil),               // 3: kv.GetResponse
+	(*DeleteRequest)(nil),             // 4: kv.DeleteRequest
+	(*DeleteResponse)(nil),            // 5: kv.DeleteResponse
+	(*VersionedRecord)(nil),           // 6: kv.VersionedRecord
+	(*ReplicaRecordRequest)(nil),      // 7: kv.ReplicaRecordRequest
+	(*ReplicaRecordResponse)(nil),     // 8: kv.ReplicaRecordResponse
+	(*ReplicaRecordReadResponse)(nil), // 9: kv.ReplicaRecordReadResponse
+	nil,                               // 10: kv.VersionedRecord.ClockEntry
 }
 var file_proto_kv_proto_depIdxs = []int32{
-	0, // 0: kv.KeyValueStore.Put:input_type -> kv.PutRequest
-	2, // 1: kv.KeyValueStore.Get:input_type -> kv.GetRequest
-	4, // 2: kv.KeyValueStore.Delete:input_type -> kv.DeleteRequest
-	0, // 3: kv.KeyValueStore.ReplicaPut:input_type -> kv.PutRequest
-	2, // 4: kv.KeyValueStore.ReplicaGet:input_type -> kv.GetRequest
-	4, // 5: kv.KeyValueStore.ReplicaDelete:input_type -> kv.DeleteRequest
-	1, // 6: kv.KeyValueStore.Put:output_type -> kv.PutResponse
-	3, // 7: kv.KeyValueStore.Get:output_type -> kv.GetResponse
-	5, // 8: kv.KeyValueStore.Delete:output_type -> kv.DeleteResponse
-	1, // 9: kv.KeyValueStore.ReplicaPut:output_type -> kv.PutResponse
-	3, // 10: kv.KeyValueStore.ReplicaGet:output_type -> kv.GetResponse
-	5, // 11: kv.KeyValueStore.ReplicaDelete:output_type -> kv.DeleteResponse
-	6, // [6:12] is the sub-list for method output_type
-	0, // [0:6] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	10, // 0: kv.VersionedRecord.clock:type_name -> kv.VersionedRecord.ClockEntry
+	6,  // 1: kv.ReplicaRecordRequest.record:type_name -> kv.VersionedRecord
+	6,  // 2: kv.ReplicaRecordReadResponse.record:type_name -> kv.VersionedRecord
+	0,  // 3: kv.KeyValueStore.Put:input_type -> kv.PutRequest
+	2,  // 4: kv.KeyValueStore.Get:input_type -> kv.GetRequest
+	4,  // 5: kv.KeyValueStore.Delete:input_type -> kv.DeleteRequest
+	0,  // 6: kv.KeyValueStore.ReplicaPut:input_type -> kv.PutRequest
+	2,  // 7: kv.KeyValueStore.ReplicaGet:input_type -> kv.GetRequest
+	4,  // 8: kv.KeyValueStore.ReplicaDelete:input_type -> kv.DeleteRequest
+	7,  // 9: kv.KeyValueStore.ApplyReplicaRecord:input_type -> kv.ReplicaRecordRequest
+	2,  // 10: kv.KeyValueStore.ReadReplicaRecord:input_type -> kv.GetRequest
+	1,  // 11: kv.KeyValueStore.Put:output_type -> kv.PutResponse
+	3,  // 12: kv.KeyValueStore.Get:output_type -> kv.GetResponse
+	5,  // 13: kv.KeyValueStore.Delete:output_type -> kv.DeleteResponse
+	1,  // 14: kv.KeyValueStore.ReplicaPut:output_type -> kv.PutResponse
+	3,  // 15: kv.KeyValueStore.ReplicaGet:output_type -> kv.GetResponse
+	5,  // 16: kv.KeyValueStore.ReplicaDelete:output_type -> kv.DeleteResponse
+	8,  // 17: kv.KeyValueStore.ApplyReplicaRecord:output_type -> kv.ReplicaRecordResponse
+	9,  // 18: kv.KeyValueStore.ReadReplicaRecord:output_type -> kv.ReplicaRecordReadResponse
+	11, // [11:19] is the sub-list for method output_type
+	3,  // [3:11] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_proto_kv_proto_init() }
@@ -366,7 +600,7 @@ func file_proto_kv_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_kv_proto_rawDesc), len(file_proto_kv_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"strconv"
+	"sync"
 
 	"github.com/A-s-n55555/distributed-kv-store/internal/ring"
 	"github.com/A-s-n55555/distributed-kv-store/internal/store"
@@ -16,6 +17,8 @@ import (
 
 type GRPCServer struct {
 	kvpb.UnimplementedKeyValueStoreServer
+
+	writeMu sync.Mutex
 
 	store             *store.Map
 	ring              *ring.Ring
@@ -67,41 +70,20 @@ func (s *GRPCServer) Put(
 	ctx context.Context,
 	request *kvpb.PutRequest,
 ) (*kvpb.PutResponse, error) {
-	replicaNodes, err := s.replicaNodesFor(request.GetKey())
-	if err != nil {
-		return nil, err
-	}
-
-	successfulWrites := 0
-	var lastError error
-
-	for _, replicaNode := range replicaNodes {
-		if replicaNode.ID == s.nodeID {
-			err = s.putLocal(request)
-		} else {
-			err = s.forwardReplicaPut(
-				ctx,
-				replicaNode,
-				request,
-			)
-		}
-
-		if err != nil {
-			lastError = err
-			continue
-		}
-
-		successfulWrites++
-	}
-
-	if successfulWrites < s.writeQuorum {
-		return nil, status.Errorf(
-			codes.Unavailable,
-			"write quorum not reached: successful=%d required=%d: %v",
-			successfulWrites,
-			s.writeQuorum,
-			lastError,
+	if request == nil {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			"request is required",
 		)
+	}
+
+	if err := s.coordinateVersionedWrite(
+		ctx,
+		request.GetKey(),
+		request.GetValue(),
+		false,
+	); err != nil {
+		return nil, err
 	}
 
 	return &kvpb.PutResponse{}, nil
@@ -141,82 +123,31 @@ func (s *GRPCServer) Get(
 	ctx context.Context,
 	request *kvpb.GetRequest,
 ) (*kvpb.GetResponse, error) {
-	replicaNodes, err := s.replicaNodesFor(request.GetKey())
+	if request == nil {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			"request is required",
+		)
+	}
+
+	record, exists, err := s.readVersionedQuorum(
+		ctx,
+		request.GetKey(),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	readResults := make(
-		[]*kvpb.GetResponse,
-		0,
-		s.readQuorum,
-	)
-
-	var lastError error
-
-	for _, replicaNode := range replicaNodes {
-		var response *kvpb.GetResponse
-
-		if replicaNode.ID == s.nodeID {
-			response = s.getLocal(request)
-		} else {
-			response, err = s.forwardReplicaGet(
-				ctx,
-				replicaNode,
-				request,
-			)
-
-			if err != nil {
-				lastError = err
-				continue
-			}
-		}
-
-		readResults = append(readResults, response)
-
-		if len(readResults) == s.readQuorum {
-			break
-		}
+	if !exists || record.Deleted {
+		return &kvpb.GetResponse{
+			Found: false,
+		}, nil
 	}
 
-	if len(readResults) < s.readQuorum {
-		return nil, status.Errorf(
-			codes.Unavailable,
-			"read quorum not reached: successful=%d required=%d: %v",
-			len(readResults),
-			s.readQuorum,
-			lastError,
-		)
-	}
-
-	firstResult := readResults[0]
-
-	for _, result := range readResults[1:] {
-		if !sameReadResult(firstResult, result) {
-			return nil, status.Error(
-				codes.Aborted,
-				"replica values disagree; conflict resolution is not implemented",
-			)
-		}
-	}
-
-	return firstResult, nil
-}
-
-func sameReadResult(
-	first *kvpb.GetResponse,
-	second *kvpb.GetResponse,
-) bool {
-	if first.GetFound() != second.GetFound() {
-		return false
-	}
-
-	// Both replicas agree that the key does not exist.
-	if !first.GetFound() {
-		return true
-	}
-
-	return first.GetValue() == second.GetValue()
+	return &kvpb.GetResponse{
+		Value: record.Value,
+		Found: true,
+	}, nil
 }
 
 func (s *GRPCServer) getLocal(
@@ -243,46 +174,24 @@ func (s *GRPCServer) Delete(
 	ctx context.Context,
 	request *kvpb.DeleteRequest,
 ) (*kvpb.DeleteResponse, error) {
-	replicaNodes, err := s.replicaNodesFor(request.GetKey())
-	if err != nil {
-		return nil, err
-	}
-
-	successfulDeletes := 0
-	var lastError error
-
-	for _, replicaNode := range replicaNodes {
-		if replicaNode.ID == s.nodeID {
-			err = s.deleteLocal(request)
-		} else {
-			err = s.forwardReplicaDelete(
-				ctx,
-				replicaNode,
-				request,
-			)
-		}
-
-		if err != nil {
-			lastError = err
-			continue
-		}
-
-		successfulDeletes++
-	}
-
-	if successfulDeletes < s.writeQuorum {
-		return nil, status.Errorf(
-			codes.Unavailable,
-			"delete quorum not reached: successful=%d required=%d: %v",
-			successfulDeletes,
-			s.writeQuorum,
-			lastError,
+	if request == nil {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			"request is required",
 		)
+	}
+
+	if err := s.coordinateVersionedWrite(
+		ctx,
+		request.GetKey(),
+		"",
+		true,
+	); err != nil {
+		return nil, err
 	}
 
 	return &kvpb.DeleteResponse{}, nil
 }
-
 func (s *GRPCServer) deleteLocal(
 	request *kvpb.DeleteRequest,
 ) error {

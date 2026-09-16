@@ -12,6 +12,12 @@ service KeyValueStore {
   rpc ReplicaPut(PutRequest) returns (PutResponse);
   rpc ReplicaGet(GetRequest) returns (GetResponse);
   rpc ReplicaDelete(DeleteRequest) returns (DeleteResponse);
+
+  rpc ApplyReplicaRecord(ReplicaRecordRequest)
+      returns (ReplicaRecordResponse);
+
+  rpc ReadReplicaRecord(GetRequest)
+      returns (ReplicaRecordReadResponse);
 }
 
 message PutRequest {
@@ -35,3 +41,26 @@ message DeleteRequest {
 }
 
 message DeleteResponse {}
+
+// A value or deletion together with its causal version.
+message VersionedRecord {
+  string value = 1;
+  map<string, uint64> clock = 2;
+  bool deleted = 3;
+}
+
+// Requests that a replica apply a complete versioned record.
+message ReplicaRecordRequest {
+  int64 key = 1;
+  VersionedRecord record = 2;
+}
+
+// Acknowledges successful processing.
+// An outdated or identical record may be ignored by the store.
+message ReplicaRecordResponse {}
+
+// Returns metadata, including deletion tombstones.
+message ReplicaRecordReadResponse {
+  VersionedRecord record = 1;
+  bool exists = 2;
+}
