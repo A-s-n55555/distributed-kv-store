@@ -1,13 +1,19 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"net"
+	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 
+	"github.com/A-s-n55555/distributed-kv-store/internal/handoff"
 	"github.com/A-s-n55555/distributed-kv-store/internal/ring"
 	"github.com/A-s-n55555/distributed-kv-store/internal/server"
 	"github.com/A-s-n55555/distributed-kv-store/internal/store"
@@ -93,6 +99,26 @@ func main() {
 		log.Fatalf("failed to recover store: %v", err)
 	}
 
+	hintPath := filepath.Join(*dataDir, *nodeID, "hints.log")
+
+	hintQueue, err := handoff.OpenQueue(hintPath)
+	if err != nil {
+		log.Fatalf("failed to open hint queue: %v", err)
+	}
+
+	defer func() {
+		if err := hintQueue.Close(); err != nil {
+			log.Printf("failed to close hint queue: %v", err)
+		}
+	}()
+
+	log.Printf(
+		"node %s recovered %d pending hints; journal: %s",
+		*nodeID,
+		len(hintQueue.Pending()),
+		hintPath,
+	)
+
 	listener, err := net.Listen("tcp", *address)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -100,16 +126,19 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 
+	kvService := server.New(
+		kvStore,
+		clusterRing,
+		*nodeID,
+		*replicationFactor,
+		*readQuorum,
+		*writeQuorum,
+		hintQueue,
+	)
+
 	kvpb.RegisterKeyValueStoreServer(
 		grpcServer,
-		server.New(
-			kvStore,
-			clusterRing,
-			*nodeID,
-			*replicationFactor,
-			*readQuorum,
-			*writeQuorum,
-		),
+		kvService,
 	)
 
 	log.Printf(
@@ -122,9 +151,73 @@ func main() {
 		*writeQuorum,
 	)
 
-	if err := grpcServer.Serve(listener); err != nil {
-		log.Fatalf("gRPC server failed: %v", err)
+	serverContext, cancelServer := signal.NotifyContext(
+		context.Background(),
+		os.Interrupt,
+		syscall.SIGTERM,
+	)
+	defer cancelServer()
+
+	hintWorkerDone := make(chan struct{})
+
+	go func() {
+		defer close(hintWorkerDone)
+
+		if err := kvService.RunHintDelivery(
+			serverContext,
+			3*time.Second,
+		); err != nil {
+			log.Printf("hint worker stopped after an error: %v", err)
+
+			// Stop the server rather than silently running without delivery.
+			cancelServer()
+		}
+	}()
+
+	serveResult := make(chan error, 1)
+
+	go func() {
+		serveResult <- grpcServer.Serve(listener)
+	}()
+
+	select {
+	case <-serverContext.Done():
+		log.Printf("node %s shutting down", *nodeID)
+
+	case err := <-serveResult:
+		if err != nil {
+			log.Printf("gRPC server stopped: %v", err)
+		}
 	}
+
+	cancelServer()
+
+	// Allow active requests to finish, with a bounded shutdown wait.
+	grpcStopped := make(chan struct{})
+
+	go func() {
+		grpcServer.GracefulStop()
+		close(grpcStopped)
+	}()
+
+	shutdownTimer := time.NewTimer(5 * time.Second)
+
+	select {
+	case <-grpcStopped:
+		if !shutdownTimer.Stop() {
+			// No further use of the timer is needed.
+		}
+
+	case <-shutdownTimer.C:
+		log.Printf("forcing gRPC shutdown")
+		grpcServer.Stop()
+		<-grpcStopped
+	}
+
+	// The journal remains open until the worker has exited.
+	<-hintWorkerDone
+
+	log.Printf("node %s stopped", *nodeID)
 }
 
 func buildRing(nodesText string) (*ring.Ring, error) {

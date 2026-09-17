@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/A-s-n55555/distributed-kv-store/internal/handoff"
 	"github.com/A-s-n55555/distributed-kv-store/internal/ring"
 	"github.com/A-s-n55555/distributed-kv-store/internal/store"
 	kvpb "github.com/A-s-n55555/distributed-kv-store/proto"
@@ -26,6 +27,7 @@ type GRPCServer struct {
 	replicationFactor int
 	readQuorum        int
 	writeQuorum       int
+	hintQueue         *handoff.Queue
 }
 
 func New(
@@ -35,6 +37,7 @@ func New(
 	replicationFactor int,
 	readQuorum int,
 	writeQuorum int,
+	hintQueue *handoff.Queue,
 ) *GRPCServer {
 	return &GRPCServer{
 		store:             kvStore,
@@ -43,6 +46,7 @@ func New(
 		replicationFactor: replicationFactor,
 		readQuorum:        readQuorum,
 		writeQuorum:       writeQuorum,
+		hintQueue:         hintQueue,
 	}
 }
 

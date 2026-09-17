@@ -49,6 +49,7 @@ func (s *GRPCServer) coordinateVersionedWrite(
 	successfulWrites := 0
 	var lastError error
 	var conflictError error
+	var hintPersistenceError error
 
 	for _, node := range replicaNodes {
 		err := s.applyRecordToReplica(ctx, node, key, incoming)
@@ -59,7 +60,23 @@ func (s *GRPCServer) coordinateVersionedWrite(
 				conflictError = err
 			}
 
+			if hintError := s.saveFailedReplicaHint(
+				node,
+				key,
+				incoming,
+				err,
+			); hintError != nil {
+				hintPersistenceError = hintError
+			}
+
 			continue
+		}
+		if hintPersistenceError != nil {
+			return status.Errorf(
+				codes.Internal,
+				"failed to preserve pending replica delivery: %v",
+				hintPersistenceError,
+			)
 		}
 
 		successfulWrites++
