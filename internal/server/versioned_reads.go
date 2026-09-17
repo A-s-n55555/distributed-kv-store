@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"log"
 
 	"github.com/A-s-n55555/distributed-kv-store/internal/store"
 	"github.com/A-s-n55555/distributed-kv-store/internal/version"
@@ -19,7 +20,13 @@ func (s *GRPCServer) readVersionedQuorum(
 	}
 
 	successfulReads := 0
-	records := make([]store.Record, 0, s.readQuorum)
+	records := make([]store.Record, 0, len(replicaNodes))
+	observations := make(
+		[]replicaObservation,
+		0,
+		len(replicaNodes),
+	)
+
 	var lastError error
 
 	for _, node := range replicaNodes {
@@ -33,15 +40,19 @@ func (s *GRPCServer) readVersionedQuorum(
 			continue
 		}
 
-		// A replica reporting "missing" still responded successfully.
 		successfulReads++
+
+		observations = append(
+			observations,
+			replicaObservation{
+				node:   node,
+				record: record,
+				exists: exists,
+			},
+		)
 
 		if exists {
 			records = append(records, record)
-		}
-
-		if successfulReads == s.readQuorum {
-			break
 		}
 	}
 
@@ -55,7 +66,27 @@ func (s *GRPCServer) readVersionedQuorum(
 		)
 	}
 
-	return selectNewestRecord(records)
+	selected, exists, err := selectNewestRecord(records)
+	if err != nil {
+		return store.Record{}, false, err
+	}
+
+	if !exists {
+		return store.Record{}, false, nil
+	}
+
+	repairErrors := s.repairObservedReplicas(
+		ctx,
+		key,
+		selected,
+		observations,
+	)
+
+	for _, repairError := range repairErrors {
+		log.Printf("read repair failed: %v", repairError)
+	}
+
+	return selected, true, nil
 }
 
 func selectNewestRecord(
