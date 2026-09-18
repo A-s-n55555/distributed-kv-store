@@ -55,11 +55,11 @@ func (s *GRPCServer) applyRecordToReplica(
 	return err
 }
 
-func (s *GRPCServer) readRecordFromReplica(
+func (s *GRPCServer) readRecordsFromReplica(
 	ctx context.Context,
 	node ring.Node,
 	key int64,
-) (store.Record, bool, error) {
+) ([]store.Record, error) {
 	request := &kvpb.GetRequest{Key: key}
 
 	var response *kvpb.ReplicaRecordReadResponse
@@ -73,7 +73,7 @@ func (s *GRPCServer) readRecordFromReplica(
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 		)
 		if connectError != nil {
-			return store.Record{}, false, status.Errorf(
+			return nil, status.Errorf(
 				codes.Unavailable,
 				"connect to replica %s failed: %v",
 				node.ID,
@@ -97,19 +97,106 @@ func (s *GRPCServer) readRecordFromReplica(
 	}
 
 	if err != nil {
+		return nil, err
+	}
+
+	return recordsFromReplicaResponse(response)
+}
+
+// Temporary compatibility wrapper for single-record callers.
+func (s *GRPCServer) readRecordFromReplica(
+	ctx context.Context,
+	node ring.Node,
+	key int64,
+) (store.Record, bool, error) {
+	records, err := s.readRecordsFromReplica(ctx, node, key)
+	if err != nil {
 		return store.Record{}, false, err
 	}
 
-	if !response.GetExists() {
+	switch len(records) {
+	case 0:
 		return store.Record{}, false, nil
-	}
 
-	if response.GetRecord() == nil {
+	case 1:
+		return records[0], true, nil
+
+	default:
 		return store.Record{}, false, status.Error(
+			codes.Aborted,
+			"replica contains multiple concurrent versions",
+		)
+	}
+}
+
+func recordsFromReplicaResponse(
+	response *kvpb.ReplicaRecordReadResponse,
+) ([]store.Record, error) {
+	if response == nil {
+		return nil, status.Error(
 			codes.Internal,
-			"replica reported an existing record without its contents",
+			"replica returned a nil response",
 		)
 	}
 
-	return recordFromProto(response.GetRecord()), true, nil
+	if !response.GetExists() {
+		if len(response.GetRecords()) != 0 ||
+			response.GetRecord() != nil {
+			return nil, status.Error(
+				codes.Internal,
+				"replica reported missing data with record contents",
+			)
+		}
+
+		return nil, nil
+	}
+
+	wireRecords := response.GetRecords()
+
+	// Support the previous single-record response format.
+	if len(wireRecords) == 0 && response.GetRecord() != nil {
+		wireRecords = []*kvpb.VersionedRecord{
+			response.GetRecord(),
+		}
+	}
+
+	if len(wireRecords) == 0 {
+		return nil, status.Error(
+			codes.Internal,
+			"replica reported existing data without records",
+		)
+	}
+
+	records := make([]store.Record, 0, len(wireRecords))
+
+	for _, wireRecord := range wireRecords {
+		if wireRecord == nil {
+			return nil, status.Error(
+				codes.Internal,
+				"replica returned a nil record",
+			)
+		}
+
+		if wireRecord.GetDeleted() &&
+			wireRecord.GetValue() != "" {
+			return nil, status.Error(
+				codes.Internal,
+				"replica returned a tombstone with a value",
+			)
+		}
+
+		for nodeID, counter := range wireRecord.GetClock() {
+			if nodeID == "" || counter == 0 {
+				return nil, status.Error(
+					codes.Internal,
+					"replica returned an invalid vector clock",
+				)
+			}
+		}
+
+		// Empty clocks remain allowed for legacy stored records.
+		records = append(records, recordFromProto(wireRecord))
+	}
+
+	return records, nil
 }

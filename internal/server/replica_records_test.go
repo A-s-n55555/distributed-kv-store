@@ -72,7 +72,7 @@ func TestReplicaRecordRoundTrip(t *testing.T) {
 	// The response must not expose the store's internal clock.
 	response.Record.Clock["node-1"] = 888
 
-	record, _ := s.store.GetRecord(1)
+	record, _ := mustStoreGetRecord(t, s.store, 1)
 	if record.Clock["node-1"] != 1 {
 		t.Fatal("response exposed the internal clock")
 	}
@@ -168,7 +168,7 @@ func TestReplicaRecordErrorCodes(t *testing.T) {
 					Clock: map[string]uint64{"node-2": 1},
 				},
 			},
-			want: codes.Aborted,
+			want: codes.OK,
 		},
 	}
 
@@ -185,5 +185,35 @@ func TestReplicaRecordErrorCodes(t *testing.T) {
 				)
 			}
 		})
+	}
+}
+func TestReadReplicaRecordIncludesVersionList(t *testing.T) {
+	s := newRecordTestServer(t)
+
+	if err := s.store.ApplyRecord(1, store.Record{
+		Value: "hello",
+		Clock: map[string]uint64{"node-1": 1},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	response, err := s.ReadReplicaRecord(
+		context.Background(),
+		&kvpb.GetRequest{Key: 1},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !response.GetExists() || len(response.GetRecords()) != 1 {
+		t.Fatalf("incorrect response: %v", response)
+	}
+
+	if response.GetRecords()[0].GetValue() != "hello" {
+		t.Fatal("version list lost the value")
+	}
+
+	if response.GetRecord() == nil {
+		t.Fatal("single-record compatibility field is missing")
 	}
 }

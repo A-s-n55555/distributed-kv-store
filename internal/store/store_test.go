@@ -41,7 +41,7 @@ func TestPutAndGet(t *testing.T) {
 		t.Fatalf("Put() error = %v", err)
 	}
 
-	if got, exists := m.Get(1); got != "value1" || !exists {
+	if got, exists := mustGet(t, m, 1); got != "value1" || !exists {
 		t.Fatalf("Get(1) = %q, exists = %v; want %q, true",
 			got, exists, "value1")
 	}
@@ -58,7 +58,7 @@ func TestPutUpdatesValue(t *testing.T) {
 		t.Fatalf("second Put() error = %v", err)
 	}
 
-	if got, exists := m.Get(1); got != "new" || !exists {
+	if got, exists := mustGet(t, m, 1); got != "new" || !exists {
 		t.Fatalf("Get(1) = %q, exists = %v; want %q, true",
 			got, exists, "new")
 	}
@@ -75,7 +75,7 @@ func TestDelete(t *testing.T) {
 		t.Fatalf("Delete() error = %v", err)
 	}
 
-	if got, exists := m.Get(1); got != "" || exists {
+	if got, exists := mustGet(t, m, 1); got != "" || exists {
 		t.Fatalf("Get(1) after Delete = %q, exists = %v; want empty string, false",
 			got, exists)
 	}
@@ -100,7 +100,7 @@ func TestConcurrentPut(t *testing.T) {
 	wg.Wait()
 
 	for i := 0; i < 100; i++ {
-		if value, exists := m.Get(int64(i)); value != "value" || !exists {
+		if value, exists := mustGet(t, m, int64(i)); value != "value" || !exists {
 			t.Errorf("key %d was not stored correctly", i)
 		}
 	}
@@ -148,15 +148,15 @@ func TestRecoveryFromWAL(t *testing.T) {
 		t.Fatalf("second NewMap() error = %v", err)
 	}
 
-	if value, exists := store2.Get(1); exists || value != "" {
+	if value, exists := mustGet(t, store2, 1); exists || value != "" {
 		t.Errorf("deleted key 1 was restored")
 	}
 
-	if value, exists := store2.Get(2); !exists || value != "value2" {
+	if value, exists := mustGet(t, store2, 2); !exists || value != "value2" {
 		t.Errorf("Get(2) = %q, exists = %v; want value2, true",
 			value, exists)
 	}
-	record, exists := store2.GetRecord(1)
+	record, exists := mustGetRecord(t, store2, 1)
 	if !exists || !record.Deleted {
 		t.Fatal("deleted key's tombstone was not recovered")
 	}
@@ -172,7 +172,7 @@ func TestDeleteRetainsTombstone(t *testing.T) {
 		t.Fatalf("Delete() error = %v", err)
 	}
 
-	record, exists := m.GetRecord(1)
+	record, exists := mustGetRecord(t, m, 1)
 
 	if !exists || !record.Deleted {
 		t.Fatalf(
@@ -182,7 +182,7 @@ func TestDeleteRetainsTombstone(t *testing.T) {
 		)
 	}
 
-	if value, found := m.Get(1); found || value != "" {
+	if value, found := mustGet(t, m, 1); found || value != "" {
 		t.Fatal("Get() exposed a deleted record")
 	}
 }
@@ -216,7 +216,7 @@ func TestRecoveryPreservesRecordMetadata(t *testing.T) {
 		t.Fatalf("NewMap() error = %v", err)
 	}
 
-	valueRecord, exists := recovered.GetRecord(1)
+	valueRecord, exists := mustGetRecord(t, recovered, 1)
 	if !exists ||
 		valueRecord.Deleted ||
 		valueRecord.Value != "hello" ||
@@ -224,7 +224,7 @@ func TestRecoveryPreservesRecordMetadata(t *testing.T) {
 		t.Fatalf("incorrect recovered value: %+v", valueRecord)
 	}
 
-	tombstone, exists := recovered.GetRecord(2)
+	tombstone, exists := mustGetRecord(t, recovered, 2)
 	if !exists ||
 		!tombstone.Deleted ||
 		tombstone.Clock["node-1"] != 3 {
@@ -234,7 +234,7 @@ func TestRecoveryPreservesRecordMetadata(t *testing.T) {
 	// Modifying the returned clock must not change stored metadata.
 	valueRecord.Clock["node-1"] = 999
 
-	unchanged, _ := recovered.GetRecord(1)
+	unchanged, _ := mustGetRecord(t, recovered, 1)
 	if unchanged.Clock["node-1"] != 2 {
 		t.Fatal("GetRecord() exposed the internal clock map")
 	}
@@ -254,7 +254,7 @@ func TestApplyRecordPersistsClockAndCopiesInput(t *testing.T) {
 
 	incoming.Clock["node-1"] = 999
 
-	record, _ := m.GetRecord(1)
+	record, _ := mustGetRecord(t, m, 1)
 	if record.Clock["node-1"] != 1 {
 		t.Fatal("ApplyRecord() retained the caller's clock map")
 	}
@@ -264,7 +264,7 @@ func TestApplyRecordPersistsClockAndCopiesInput(t *testing.T) {
 		t.Fatalf("NewMap() error = %v", err)
 	}
 
-	record, exists := recovered.GetRecord(1)
+	record, exists := mustGetRecord(t, recovered, 1)
 	if !exists ||
 		record.Value != "hello" ||
 		record.Clock["node-1"] != 1 {
@@ -297,7 +297,7 @@ func TestApplyRecordIgnoresStaleAndDuplicateRecords(t *testing.T) {
 		t.Fatalf("stale record error = %v", err)
 	}
 
-	value, found := m.Get(1)
+	value, found := mustGet(t, m, 1)
 	if !found || value != "new" {
 		t.Fatalf("Get(1) = %q, %v; want new, true", value, found)
 	}
@@ -312,7 +312,7 @@ func TestApplyRecordIgnoresStaleAndDuplicateRecords(t *testing.T) {
 	}
 }
 
-func TestApplyRecordRejectsConflicts(t *testing.T) {
+func TestApplyRecordRejectsEqualClockDifferentContents(t *testing.T) {
 	m := newTestMap(t)
 
 	if err := m.ApplyRecord(1, Record{
@@ -322,31 +322,19 @@ func TestApplyRecordRejectsConflicts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	conflicts := []Record{
-		{
-			Value: "concurrent",
-			Clock: version.Clock{"node-2": 1},
-		},
-		{
-			Value: "different",
-			Clock: version.Clock{"node-1": 1},
-		},
+	err := m.ApplyRecord(1, Record{
+		Value: "different",
+		Clock: version.Clock{"node-1": 1},
+	})
+	if !errors.Is(err, ErrRecordConflict) {
+		t.Fatalf("error = %v; want ErrRecordConflict", err)
 	}
 
-	for _, incoming := range conflicts {
-		err := m.ApplyRecord(1, incoming)
-
-		if !errors.Is(err, ErrRecordConflict) {
-			t.Fatalf("error = %v; want ErrRecordConflict", err)
-		}
-	}
-
-	value, _ := m.Get(1)
-	if value != "first" {
-		t.Fatal("conflicting record replaced the existing value")
+	value, exists := mustGet(t, m, 1)
+	if !exists || value != "first" {
+		t.Fatal("invalid version changed the stored value")
 	}
 }
-
 func TestVersionedTombstonePreventsStaleResurrection(t *testing.T) {
 	m := newTestMap(t)
 
@@ -370,7 +358,7 @@ func TestVersionedTombstonePreventsStaleResurrection(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, found := m.Get(1); found {
+	if _, found := mustGet(t, m, 1); found {
 		t.Fatal("stale value resurrected a deleted key")
 	}
 
@@ -387,7 +375,7 @@ func TestVersionedTombstonePreventsStaleResurrection(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	record, exists := recovered.GetRecord(1)
+	record, exists := mustGetRecord(t, recovered, 1)
 	if !exists ||
 		!record.Deleted ||
 		record.Clock["node-1"] != 2 {
@@ -451,7 +439,7 @@ func TestNextClockPersistsReservations(t *testing.T) {
 		)
 	}
 
-	if _, exists := recovered.GetRecord(0); exists {
+	if _, exists := mustGetRecord(t, recovered, 0); exists {
 		t.Fatal("CLOCK entry incorrectly created a key record")
 	}
 }
@@ -486,5 +474,197 @@ func TestNextClockRejectsOverflow(t *testing.T) {
 
 	if err == nil {
 		t.Fatal("NextClock() accepted counter overflow")
+	}
+}
+func TestGetRecordsCopiesClock(t *testing.T) {
+	m := newTestMap(t)
+
+	if err := m.ApplyRecord(1, Record{
+		Value: "hello",
+		Clock: version.Clock{"node-1": 1},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	records := m.GetRecords(1)
+
+	if len(records) != 1 || records[0].Value != "hello" {
+		t.Fatalf("incorrect records: %+v", records)
+	}
+
+	records[0].Clock["node-1"] = 999
+
+	unchanged := m.GetRecords(1)
+	if unchanged[0].Clock["node-1"] != 1 {
+		t.Fatal("GetRecords() exposed the internal clock")
+	}
+
+	if len(m.GetRecords(99)) != 0 {
+		t.Fatal("missing key returned records")
+	}
+}
+
+func mustGet(
+	t *testing.T,
+	m *Map,
+	key int64,
+) (string, bool) {
+	t.Helper()
+
+	value, exists, err := m.Get(key)
+	if err != nil {
+		t.Fatalf("Get(%d): %v", key, err)
+	}
+	return value, exists
+}
+
+func mustGetRecord(
+	t *testing.T,
+	m *Map,
+	key int64,
+) (Record, bool) {
+	t.Helper()
+
+	record, exists, err := m.GetRecord(key)
+	if err != nil {
+		t.Fatalf("GetRecord(%d): %v", key, err)
+	}
+	return record, exists
+}
+
+func TestStorePreservesSiblingsAcrossRecovery(t *testing.T) {
+	m := newTestMap(t)
+
+	first := Record{
+		Value: "first",
+		Clock: version.Clock{"node-1": 1},
+	}
+	second := Record{
+		Value: "second",
+		Clock: version.Clock{"node-2": 1},
+	}
+
+	for _, record := range []Record{first, second} {
+		if err := m.ApplyRecord(1, record); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	records := m.GetRecords(1)
+	if len(records) != 2 {
+		t.Fatalf("siblings = %d; want 2", len(records))
+	}
+
+	if _, _, err := m.Get(1); !errors.Is(err, ErrRecordConflict) {
+		t.Fatalf("Get error = %v; want conflict", err)
+	}
+
+	if _, _, err := m.GetRecord(1); !errors.Is(err, ErrRecordConflict) {
+		t.Fatalf("GetRecord error = %v; want conflict", err)
+	}
+
+	// Duplicate delivery must not append another record.
+	if err := m.ApplyRecord(1, second); err != nil {
+		t.Fatal(err)
+	}
+
+	entries, err := m.wal.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 2 {
+		t.Fatalf("WAL entries = %d; want 2", len(entries))
+	}
+
+	recovered, err := NewMap(m.wal)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	records = recovered.GetRecords(1)
+	if len(records) != 2 ||
+		records[0].Value != "first" ||
+		records[1].Value != "second" {
+		t.Fatalf("incorrect recovered siblings: %+v", records)
+	}
+
+	records[0].Clock["node-1"] = 999
+	if recovered.GetRecords(1)[0].Clock["node-1"] != 1 {
+		t.Fatal("GetRecords exposed an internal clock")
+	}
+}
+
+func TestDominatingRecordReplacesSiblings(t *testing.T) {
+	m := newTestMap(t)
+
+	for _, record := range []Record{
+		{
+			Value: "first",
+			Clock: version.Clock{"node-1": 1},
+		},
+		{
+			Value: "second",
+			Clock: version.Clock{"node-2": 1},
+		},
+		{
+			Value: "resolved",
+			Clock: version.Clock{
+				"node-1": 2,
+				"node-2": 1,
+			},
+		},
+	} {
+		if err := m.ApplyRecord(1, record); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	value, exists := mustGet(t, m, 1)
+	if !exists || value != "resolved" {
+		t.Fatal("dominating version did not replace siblings")
+	}
+
+	recovered, err := NewMap(m.wal)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	records := recovered.GetRecords(1)
+	if len(records) != 1 || records[0].Value != "resolved" {
+		t.Fatalf("incorrect recovered resolution: %+v", records)
+	}
+}
+
+func TestConcurrentTombstoneRemainsSibling(t *testing.T) {
+	m := newTestMap(t)
+
+	if err := m.ApplyRecord(1, Record{
+		Value: "live",
+		Clock: version.Clock{"node-1": 1},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := m.ApplyRecord(1, Record{
+		Deleted: true,
+		Clock:   version.Clock{"node-2": 1},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	recovered, err := NewMap(m.wal)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	records := recovered.GetRecords(1)
+	if len(records) != 2 ||
+		records[0].Deleted ||
+		!records[1].Deleted {
+		t.Fatalf("incorrect live/delete siblings: %+v", records)
+	}
+
+	if _, _, err := recovered.Get(1); !errors.Is(err, ErrRecordConflict) {
+		t.Fatalf("Get error = %v; want conflict", err)
 	}
 }

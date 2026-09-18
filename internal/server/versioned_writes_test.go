@@ -28,7 +28,7 @@ func TestVersionedPutDeleteAndRecreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	first, _ := s.store.GetRecord(1)
+	first, _ := mustStoreGetRecord(t, s.store, 1)
 	if first.Clock["node-1"] != 1 {
 		t.Fatalf("first clock = %v; want node-1:1", first.Clock)
 	}
@@ -40,7 +40,7 @@ func TestVersionedPutDeleteAndRecreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	second, _ := s.store.GetRecord(1)
+	second, _ := mustStoreGetRecord(t, s.store, 1)
 	if second.Value != "second" ||
 		version.Compare(second.Clock, first.Clock) != version.After {
 		t.Fatalf("incorrect second record: %+v", second)
@@ -53,7 +53,7 @@ func TestVersionedPutDeleteAndRecreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tombstone, _ := s.store.GetRecord(1)
+	tombstone, _ := mustStoreGetRecord(t, s.store, 1)
 	if !tombstone.Deleted ||
 		version.Compare(tombstone.Clock, second.Clock) != version.After {
 		t.Fatalf("incorrect tombstone: %+v", tombstone)
@@ -75,7 +75,7 @@ func TestVersionedPutDeleteAndRecreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	recreated, _ := s.store.GetRecord(1)
+	recreated, _ := mustStoreGetRecord(t, s.store, 1)
 	if recreated.Deleted ||
 		recreated.Value != "recreated" ||
 		version.Compare(recreated.Clock, tombstone.Clock) != version.After {

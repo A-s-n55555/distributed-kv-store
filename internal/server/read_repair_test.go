@@ -115,14 +115,14 @@ func TestReadRepairAppliesTombstone(t *testing.T) {
 		t.Fatalf("repair errors = %v", repairErrors)
 	}
 
-	record, exists := s.store.GetRecord(1)
+	record, exists := mustStoreGetRecord(t, s.store, 1)
 	if !exists ||
 		!record.Deleted ||
 		record.Clock["node-1"] != 2 {
 		t.Fatalf("incorrect repaired record: %+v", record)
 	}
 
-	if _, found := s.store.Get(1); found {
+	if _, found := mustStoreGet(t, s.store, 1); found {
 		t.Fatal("repaired tombstone was exposed as a live value")
 	}
 }
@@ -152,10 +152,57 @@ func TestReadRepairCreatesMissingCopy(t *testing.T) {
 		t.Fatalf("repair errors = %v", repairErrors)
 	}
 
-	record, exists := s.store.GetRecord(1)
+	record, exists := mustStoreGetRecord(t, s.store, 1)
 	if !exists ||
 		record.Value != "repaired" ||
 		record.Clock["node-2"] != 3 {
 		t.Fatalf("incorrect repaired copy: %+v", record)
+	}
+}
+
+func TestObservedRepairChecksAllVersions(t *testing.T) {
+	selected := store.Record{
+		Value: "selected",
+		Clock: version.Clock{"node-1": 2},
+	}
+
+	older := store.Record{
+		Value: "old",
+		Clock: version.Clock{"node-1": 1},
+	}
+
+	concurrent := store.Record{
+		Value: "other",
+		Clock: version.Clock{"node-2": 1},
+	}
+
+	if !needsObservedReadRepair(
+		selected,
+		replicaObservation{
+			records: []store.Record{older},
+			exists:  true,
+		},
+	) {
+		t.Fatal("older version was not eligible for repair")
+	}
+
+	if needsObservedReadRepair(
+		selected,
+		replicaObservation{
+			records: []store.Record{older, concurrent},
+			exists:  true,
+		},
+	) {
+		t.Fatal("repair ignored a concurrent sibling")
+	}
+
+	if needsObservedReadRepair(
+		selected,
+		replicaObservation{
+			records: []store.Record{selected},
+			exists:  true,
+		},
+	) {
+		t.Fatal("identical version unnecessarily required repair")
 	}
 }

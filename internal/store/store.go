@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"reflect"
 
 	"github.com/A-s-n55555/distributed-kv-store/internal/version"
 	"github.com/A-s-n55555/distributed-kv-store/internal/wal"
@@ -19,7 +20,7 @@ type Record struct {
 
 type Map struct {
 	mu       sync.RWMutex
-	data     map[int64]Record
+	data map[int64][]Record
 	counters map[string]uint64
 	wal      *wal.Log
 }
@@ -31,17 +32,16 @@ func NewMap(log *wal.Log) (*Map, error) {
 	}
 
 	m := &Map{
-		data:     make(map[int64]Record),
+		data:     make(map[int64][]Record),
 		counters: make(map[string]uint64),
 		wal:      log,
 	}
 
-	for _, entry := range entries {
+	for index, entry := range entries {
 		m.observeClockLocked(entry.Clock)
-		record := Record{}
 
-		if entry.Clock != nil {
-			record.Clock = version.Clone(entry.Clock)
+		record := Record{
+			Clock: version.Clone(entry.Clock),
 		}
 
 		switch entry.Operation {
@@ -52,7 +52,7 @@ func NewMap(log *wal.Log) (*Map, error) {
 			record.Deleted = true
 
 		case "CLOCK":
-			// Counter allocation only; do not create a key record.
+			// A counter reservation does not create a key.
 			continue
 
 		default:
@@ -62,18 +62,84 @@ func NewMap(log *wal.Log) (*Map, error) {
 			)
 		}
 
-		m.data[entry.Key] = record
+		if len(record.Clock) == 0 {
+			// Legacy, unversioned writes use chronological replay.
+			// Never let one erase an already-versioned key.
+			if hasVersionedRecords(m.data[entry.Key]) {
+				return nil, fmt.Errorf(
+					"WAL entry %d: unversioned write after versioned key %d",
+					index+1,
+					entry.Key,
+				)
+			}
+
+			m.data[entry.Key] = []Record{record}
+			continue
+		}
+
+		if err := validateVersionedRecord(record); err != nil {
+			return nil, fmt.Errorf(
+				"WAL entry %d: %w",
+				index+1,
+				err,
+			)
+		}
+
+		merged, err := mergeRecordVersions(
+			m.data[entry.Key],
+			record,
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"WAL entry %d, key %d: %w",
+				index+1,
+				entry.Key,
+				err,
+			)
+		}
+
+		m.data[entry.Key] = merged
 	}
 
 	return m, nil
+}
+
+func hasVersionedRecords(records []Record) bool {
+	for _, record := range records {
+		if len(record.Clock) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func validateVersionedRecord(record Record) error {
+	if len(record.Clock) == 0 {
+		return fmt.Errorf("incoming record must have a vector clock")
+	}
+
+	for nodeID, counter := range record.Clock {
+		if nodeID == "" || counter == 0 {
+			return fmt.Errorf(
+				"invalid clock entry: node=%q counter=%d",
+				nodeID,
+				counter,
+			)
+		}
+	}
+
+	if record.Deleted && record.Value != "" {
+		return fmt.Errorf("a tombstone must have an empty value")
+	}
+
+	return nil
 }
 
 func (m *Map) Put(key int64, value string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if current, exists := m.data[key]; exists &&
-		len(current.Clock) > 0 {
+	if hasVersionedRecords(m.data[key]) {
 		return fmt.Errorf(
 			"key %d is versioned; use ApplyRecord",
 			key,
@@ -88,51 +154,15 @@ func (m *Map) Put(key int64, value string) error {
 		return err
 	}
 
-	// Existing API writes remain unversioned until clock integration.
-	m.data[key] = Record{
-		Value: value,
-	}
-
+	m.data[key] = []Record{{Value: value}}
 	return nil
-}
-
-func (m *Map) Get(key int64) (string, bool) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	record, exists := m.data[key]
-
-	if !exists || record.Deleted {
-		return "", false
-	}
-
-	return record.Value, true
-}
-
-// GetRecord returns metadata, including deletion tombstones.
-// The returned clock is copied to protect the internal map.
-func (m *Map) GetRecord(key int64) (Record, bool) {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	record, exists := m.data[key]
-	if !exists {
-		return Record{}, false
-	}
-
-	if record.Clock != nil {
-		record.Clock = version.Clone(record.Clock)
-	}
-
-	return record, true
 }
 
 func (m *Map) Delete(key int64) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if current, exists := m.data[key]; exists &&
-		len(current.Clock) > 0 {
+	if hasVersionedRecords(m.data[key]) {
 		return fmt.Errorf(
 			"key %d is versioned; use ApplyRecord",
 			key,
@@ -146,70 +176,85 @@ func (m *Map) Delete(key int64) error {
 		return err
 	}
 
-	// Retain the deletion rather than removing the record.
-	m.data[key] = Record{
-		Deleted: true,
-	}
-
+	m.data[key] = []Record{{Deleted: true}}
 	return nil
 }
 
-func (m *Map) ApplyRecord(key int64, incoming Record) error {
-	if len(incoming.Clock) == 0 {
-		return fmt.Errorf("incoming record must have a vector clock")
+// GetRecords returns all retained siblings with independent clocks.
+func (m *Map) GetRecords(key int64) []Record {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	stored := m.data[key]
+	if len(stored) == 0 {
+		return nil
 	}
 
-	for nodeID, counter := range incoming.Clock {
-		if nodeID == "" || counter == 0 {
-			return fmt.Errorf(
-				"invalid clock entry: node=%q counter=%d",
-				nodeID,
-				counter,
-			)
+	result := make([]Record, len(stored))
+	for i, record := range stored {
+		result[i] = record
+		if record.Clock != nil {
+			result[i].Clock = version.Clone(record.Clock)
 		}
 	}
+	return result
+}
 
-	if incoming.Deleted && incoming.Value != "" {
-		return fmt.Errorf("a tombstone must have an empty value")
+// GetRecord returns a single version, including a tombstone.
+// Multiple siblings produce an explicit conflict, not an arbitrary winner.
+func (m *Map) GetRecord(key int64) (Record, bool, error) {
+	records := m.GetRecords(key)
+
+	switch len(records) {
+	case 0:
+		return Record{}, false, nil
+
+	case 1:
+		return records[0], true, nil
+
+	default:
+		return Record{}, true, fmt.Errorf(
+			"%w: key %d has %d siblings",
+			ErrRecordConflict,
+			key,
+			len(records),
+		)
+	}
+}
+
+func (m *Map) Get(key int64) (string, bool, error) {
+	record, exists, err := m.GetRecord(key)
+	if err != nil {
+		return "", exists, err
 	}
 
-	// Do not retain a caller-owned map.
+	if !exists || record.Deleted {
+		return "", false, nil
+	}
+
+	return record.Value, true, nil
+}
+
+func (m *Map) ApplyRecord(key int64, incoming Record) error {
+	if err := validateVersionedRecord(incoming); err != nil {
+		return err
+	}
+
 	incoming.Clock = version.Clone(incoming.Clock)
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	current, exists := m.data[key]
+	current := m.data[key]
 
-	if exists {
-		switch version.Compare(incoming.Clock, current.Clock) {
-		case version.Before:
-			// A stale record must not replace newer data.
-			return nil
+	merged, err := mergeRecordVersions(current, incoming)
+	if err != nil {
+		return fmt.Errorf("key %d: %w", key, err)
+	}
 
-		case version.Equal:
-			if incoming.Value != current.Value ||
-				incoming.Deleted != current.Deleted {
-				return fmt.Errorf(
-					"%w: equal clocks have different contents for key %d",
-					ErrRecordConflict,
-					key,
-				)
-			}
-
-			// Identical version: no additional WAL entry needed.
-			return nil
-
-		case version.Concurrent:
-			return fmt.Errorf(
-				"%w: concurrent versions for key %d",
-				ErrRecordConflict,
-				key,
-			)
-
-		case version.After:
-			// Continue and persist the newer record.
-		}
+	// Duplicate or dominated input: no extra WAL entry.
+	if reflect.DeepEqual(current, merged) {
+		return nil
 	}
 
 	operation := "PUT"
@@ -217,6 +262,7 @@ func (m *Map) ApplyRecord(key int64, incoming Record) error {
 		operation = "DELETE"
 	}
 
+	// Persist before publishing the new sibling set.
 	if err := m.wal.Append(wal.Entry{
 		Operation: operation,
 		Key:       key,
@@ -226,11 +272,10 @@ func (m *Map) ApplyRecord(key int64, incoming Record) error {
 		return err
 	}
 
-	m.data[key] = incoming
+	m.data[key] = merged
 	m.observeClockLocked(incoming.Clock)
 	return nil
 }
-
 // observeClockLocked tracks the highest counters seen.
 // The caller must hold m.mu or be initializing an unpublished store.
 func (m *Map) observeClockLocked(clock version.Clock) {

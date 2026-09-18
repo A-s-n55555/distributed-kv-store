@@ -4,15 +4,30 @@ import (
 	"context"
 
 	"github.com/A-s-n55555/distributed-kv-store/internal/store"
+	"github.com/A-s-n55555/distributed-kv-store/internal/version"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
+// Existing Put/Delete callers keep their current interface.
 func (s *GRPCServer) coordinateVersionedWrite(
 	ctx context.Context,
 	key int64,
 	value string,
 	deleted bool,
+) error {
+	return s.coordinateWrite(
+		ctx, key, value, deleted, nil, false,
+	)
+}
+
+func (s *GRPCServer) coordinateWrite(
+	ctx context.Context,
+	key int64,
+	value string,
+	deleted bool,
+	suppliedContext version.Clock,
+	resolving bool,
 ) error {
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
@@ -21,17 +36,45 @@ func (s *GRPCServer) coordinateVersionedWrite(
 		return status.FromContextError(err).Err()
 	}
 
+	if deleted && value != "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"a deletion must have an empty value",
+		)
+	}
+
 	replicaNodes, err := s.replicaNodesFor(key)
 	if err != nil {
 		return err
 	}
 
-	current, _, err := s.readVersionedQuorum(ctx, key)
-	if err != nil {
-		return err
+	var observed version.Clock
+
+	if resolving {
+		// Read all observed siblings, not a single winner.
+		records, err := s.readSiblingQuorum(ctx, key)
+		if err != nil {
+			return err
+		}
+
+		observed, err = checkedResolutionContext(
+			suppliedContext,
+			records,
+		)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Ordinary writes still reject unresolved siblings.
+		current, _, err := s.readVersionedQuorum(ctx, key)
+		if err != nil {
+			return err
+		}
+
+		observed = current.Clock
 	}
 
-	clock, err := s.store.NextClock(s.nodeID, current.Clock)
+	clock, err := s.store.NextClock(s.nodeID, observed)
 	if err != nil {
 		return status.Errorf(
 			codes.Internal,
@@ -71,15 +114,14 @@ func (s *GRPCServer) coordinateVersionedWrite(
 
 			continue
 		}
-		if hintPersistenceError != nil {
-			return status.Errorf(
-				codes.Internal,
-				"failed to preserve pending replica delivery: %v",
-				hintPersistenceError,
-			)
-		}
 
 		successfulWrites++
+	}
+	if hintPersistenceError != nil {
+		return status.Errorf(
+			codes.Internal,
+			"failed to preserve pending replica delivery: %v", hintPersistenceError,
+		)
 	}
 
 	// Conservatively report any detected record conflict,

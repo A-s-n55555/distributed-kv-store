@@ -9,15 +9,12 @@ service KeyValueStore {
   rpc Get(GetRequest) returns (GetResponse);
   rpc Delete(DeleteRequest) returns (DeleteResponse);
 
-  rpc ReplicaPut(PutRequest) returns (PutResponse);
-  rpc ReplicaGet(GetRequest) returns (GetResponse);
-  rpc ReplicaDelete(DeleteRequest) returns (DeleteResponse);
-
   rpc ApplyReplicaRecord(ReplicaRecordRequest)
       returns (ReplicaRecordResponse);
 
   rpc ReadReplicaRecord(GetRequest)
       returns (ReplicaRecordReadResponse);
+  rpc Resolve(ResolveRequest) returns (ResolveResponse);
 }
 
 message PutRequest {
@@ -34,6 +31,9 @@ message GetRequest {
 message GetResponse {
   string value = 1;
   bool found = 2;
+  repeated VersionedRecord versions = 3;
+  map<string, uint64> context = 4;
+  bool conflict = 5;
 }
 
 message DeleteRequest {
@@ -59,8 +59,20 @@ message ReplicaRecordRequest {
 // An outdated or identical record may be ignored by the store.
 message ReplicaRecordResponse {}
 
-// Returns metadata, including deletion tombstones.
 message ReplicaRecordReadResponse {
+  // Compatibility field for existing single-record readers.
   VersionedRecord record = 1;
+
   bool exists = 2;
+
+  // Complete version list for sibling-aware readers.
+  repeated VersionedRecord records = 3;
 }
+message ResolveRequest {
+  int64 key = 1;
+  string value = 2;
+  map<string, uint64> context = 3;
+  bool deleted = 4;
+}
+
+message ResolveResponse {}

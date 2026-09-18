@@ -73,8 +73,6 @@ func (s *GRPCServer) ApplyReplicaRecord(
 	return &kvpb.ReplicaRecordResponse{}, nil
 }
 
-// ReadReplicaRecord returns local metadata, including tombstones.
-// It does not contact other nodes.
 func (s *GRPCServer) ReadReplicaRecord(
 	_ context.Context,
 	request *kvpb.GetRequest,
@@ -86,18 +84,35 @@ func (s *GRPCServer) ReadReplicaRecord(
 		)
 	}
 
-	record, exists := s.store.GetRecord(request.GetKey())
+	records := s.store.GetRecords(request.GetKey())
 
-	if !exists {
+	if len(records) == 0 {
 		return &kvpb.ReplicaRecordReadResponse{
 			Exists: false,
 		}, nil
 	}
 
-	return &kvpb.ReplicaRecordReadResponse{
-		Record: recordToProto(record),
-		Exists: true,
-	}, nil
+	wireRecords := make(
+		[]*kvpb.VersionedRecord,
+		0,
+		len(records),
+	)
+
+	for _, record := range records {
+		wireRecords = append(wireRecords, recordToProto(record))
+	}
+
+	response := &kvpb.ReplicaRecordReadResponse{
+		Exists:  true,
+		Records: wireRecords,
+	}
+
+	// Only provide a single-record view when it is unambiguous.
+	if len(wireRecords) == 1 {
+		response.Record = recordToProto(records[0])
+	}
+
+	return response, nil
 }
 
 func recordFromProto(record *kvpb.VersionedRecord) store.Record {

@@ -69,7 +69,7 @@ func TestHintDeliveryAppliesAndAcknowledges(t *testing.T) {
 		)
 	}
 
-	record, exists := s.store.GetRecord(1)
+	record, exists := mustStoreGetRecord(t, s.store, 1)
 	if !exists ||
 		record.Value != "delivered" ||
 		record.Clock["node-2"] != 3 {
@@ -77,7 +77,7 @@ func TestHintDeliveryAppliesAndAcknowledges(t *testing.T) {
 	}
 }
 
-func TestHintDeliveryRetainsConcurrentConflict(t *testing.T) {
+func TestHintDeliveryAcceptsConcurrentSibling(t *testing.T) {
 	s := newHintDeliveryTestServer(t)
 
 	if err := s.store.ApplyRecord(1, store.Record{
@@ -111,12 +111,26 @@ func TestHintDeliveryRetainsConcurrentConflict(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if delivered != 0 || len(s.hintQueue.Pending()) != 1 {
-		t.Fatal("conflicting hint was incorrectly acknowledged")
+	if delivered != 1 {
+		t.Fatalf("delivered hints = %d; want 1", delivered)
 	}
 
-	value, _ := s.store.Get(1)
-	if value != "existing" {
-		t.Fatal("conflicting hint replaced the existing value")
+	if pending := s.hintQueue.Pending(); len(pending) != 0 {
+		t.Fatalf("pending hints = %d; want 0", len(pending))
+	}
+
+	records := s.store.GetRecords(1)
+	if len(records) != 2 {
+		t.Fatalf("stored siblings = %d; want 2", len(records))
+	}
+
+	// Check that both values survived; do not assume sibling ordering.
+	values := map[string]bool{}
+	for _, record := range records {
+		values[record.Value] = true
+	}
+
+	if !values["existing"] || !values["concurrent"] {
+		t.Fatalf("expected both sibling values; got %+v", records)
 	}
 }

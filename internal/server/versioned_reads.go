@@ -10,27 +10,46 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// readVersionedQuorum is the single-version interface used by writes.
+// Unresolved siblings still block ordinary writes.
 func (s *GRPCServer) readVersionedQuorum(
 	ctx context.Context,
 	key int64,
 ) (store.Record, bool, error) {
-	replicaNodes, err := s.replicaNodesFor(key)
+	records, err := s.readSiblingQuorum(ctx, key)
 	if err != nil {
 		return store.Record{}, false, err
 	}
 
+	return selectNewestRecord(records)
+}
+
+// readSiblingQuorum preserves all observed non-dominated versions.
+func (s *GRPCServer) readSiblingQuorum(
+	ctx context.Context,
+	key int64,
+) ([]store.Record, error) {
+	replicaNodes, err := s.replicaNodesFor(key)
+	if err != nil {
+		return nil, err
+	}
+
 	successfulReads := 0
-	records := make([]store.Record, 0, len(replicaNodes))
+	var records []store.Record
+	var lastError error
+
 	observations := make(
 		[]replicaObservation,
 		0,
 		len(replicaNodes),
 	)
 
-	var lastError error
-
 	for _, node := range replicaNodes {
-		record, exists, err := s.readRecordFromReplica(
+		if err := ctx.Err(); err != nil {
+			return nil, status.FromContextError(err).Err()
+		}
+
+		replicaRecords, err := s.readRecordsFromReplica(
 			ctx,
 			node,
 			key,
@@ -40,24 +59,30 @@ func (s *GRPCServer) readVersionedQuorum(
 			continue
 		}
 
+		// A missing key is a successful replica response too.
+		// Count nodes, not versions.
 		successfulReads++
 
-		observations = append(
-			observations,
-			replicaObservation{
-				node:   node,
-				record: record,
-				exists: exists,
-			},
-		)
-
-		if exists {
-			records = append(records, record)
+		observation := replicaObservation{
+			node:    node,
+			records: replicaRecords,
+			exists:  len(replicaRecords) > 0,
 		}
+
+		if len(replicaRecords) == 1 {
+			observation.record = replicaRecords[0]
+		}
+
+		observations = append(observations, observation)
+		records = append(records, replicaRecords...)
+	}
+
+	if err := ctx.Err(); err != nil {
+		return nil, status.FromContextError(err).Err()
 	}
 
 	if successfulReads < s.readQuorum {
-		return store.Record{}, false, status.Errorf(
+		return nil, status.Errorf(
 			codes.Unavailable,
 			"read quorum not reached: successful=%d required=%d: %v",
 			successfulReads,
@@ -66,29 +91,26 @@ func (s *GRPCServer) readVersionedQuorum(
 		)
 	}
 
-	selected, exists, err := selectNewestRecord(records)
+	versions, err := mergeReplicaVersions(records)
 	if err != nil {
-		return store.Record{}, false, err
+		return nil, err
 	}
 
-	if !exists {
-		return store.Record{}, false, nil
+	// Existing repair handles a unique newest version.
+	// Do not select one sibling and repair away the others.
+	if len(versions) == 1 {
+		for _, repairError := range s.repairObservedReplicas(
+			ctx,
+			key,
+			versions[0],
+			observations,
+		) {
+			log.Printf("read repair failed: %v", repairError)
+		}
 	}
 
-	repairErrors := s.repairObservedReplicas(
-		ctx,
-		key,
-		selected,
-		observations,
-	)
-
-	for _, repairError := range repairErrors {
-		log.Printf("read repair failed: %v", repairError)
-	}
-
-	return selected, true, nil
+	return versions, nil
 }
-
 func selectNewestRecord(
 	records []store.Record,
 ) (store.Record, bool, error) {
