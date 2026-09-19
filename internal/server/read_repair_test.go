@@ -206,3 +206,146 @@ func TestObservedRepairChecksAllVersions(t *testing.T) {
 		t.Fatal("identical version unnecessarily required repair")
 	}
 }
+func TestSiblingRepairPreservesVersions(t *testing.T) {
+	tests := []struct {
+		name    string
+		deleted bool
+	}{
+		{name: "concurrent live value"},
+		{name: "concurrent tombstone", deleted: true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			s := newRecordTestServer(t)
+			s.nodeID = "node-1"
+
+			first := store.Record{
+				Value: "existing",
+				Clock: version.Clock{"node-1": 1},
+			}
+
+			second := store.Record{
+				Clock:   version.Clock{"node-2": 1},
+				Deleted: tc.deleted,
+			}
+			if !tc.deleted {
+				second.Value = "other"
+			}
+
+			if err := s.store.ApplyRecord(1, first); err != nil {
+				t.Fatal(err)
+			}
+
+			repairErrors := s.repairObservedSiblingReplicas(
+				context.Background(),
+				1,
+				[]store.Record{first, second},
+				[]replicaObservation{
+					{
+						node:    ring.Node{ID: "node-1"},
+						records: []store.Record{first},
+						exists:  true,
+					},
+				},
+			)
+			if len(repairErrors) != 0 {
+				t.Fatalf("repair errors: %v", repairErrors)
+			}
+
+			got := s.store.GetRecords(1)
+			if len(got) != 2 {
+				t.Fatalf("versions = %d; want 2", len(got))
+			}
+
+			// Check contents and original clocks without assuming order.
+			for _, expected := range []store.Record{first, second} {
+				found := false
+
+				for _, actual := range got {
+					if actual.Value == expected.Value &&
+						actual.Deleted == expected.Deleted &&
+						version.Compare(
+							actual.Clock,
+							expected.Clock,
+						) == version.Equal {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					t.Fatalf(
+						"missing expected record %+v; got %+v",
+						expected,
+						got,
+					)
+				}
+			}
+		})
+	}
+}
+
+func TestSiblingRepairPreservesUpdateAfterObservation(t *testing.T) {
+	s := newRecordTestServer(t)
+	s.nodeID = "node-1"
+
+	observed := store.Record{
+		Value: "old",
+		Clock: version.Clock{"node-1": 1},
+	}
+	newer := store.Record{
+		Value: "new",
+		Clock: version.Clock{"node-1": 2},
+	}
+	other := store.Record{
+		Value: "other",
+		Clock: version.Clock{"node-2": 1},
+	}
+
+	// The destination has advanced since the read observation.
+	if err := s.store.ApplyRecord(1, newer); err != nil {
+		t.Fatal(err)
+	}
+
+	repairErrors := s.repairObservedSiblingReplicas(
+		context.Background(),
+		1,
+		[]store.Record{observed, other},
+		[]replicaObservation{
+			{
+				node:    ring.Node{ID: "node-1"},
+				records: []store.Record{observed},
+				exists:  true,
+			},
+		},
+	)
+	if len(repairErrors) != 0 {
+		t.Fatalf("repair errors: %v", repairErrors)
+	}
+
+	got := s.store.GetRecords(1)
+	if len(got) != 2 {
+		t.Fatalf("versions = %d; want 2", len(got))
+	}
+
+	for _, expected := range []store.Record{newer, other} {
+		found := false
+
+		for _, actual := range got {
+			if actual.Value == expected.Value &&
+				actual.Deleted == expected.Deleted &&
+				version.Compare(
+					actual.Clock,
+					expected.Clock,
+				) == version.Equal {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			t.Fatalf("expected %+v; got %+v", expected, got)
+		}
+	}
+}

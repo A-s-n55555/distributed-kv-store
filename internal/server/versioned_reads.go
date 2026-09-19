@@ -98,15 +98,13 @@ func (s *GRPCServer) readSiblingQuorum(
 
 	// Existing repair handles a unique newest version.
 	// Do not select one sibling and repair away the others.
-	if len(versions) == 1 {
-		for _, repairError := range s.repairObservedReplicas(
-			ctx,
-			key,
-			versions[0],
-			observations,
-		) {
-			log.Printf("read repair failed: %v", repairError)
-		}
+	for _, repairError := range s.repairObservedSiblingReplicas(
+		ctx,
+		key,
+		versions,
+		observations,
+	) {
+		log.Printf("read repair failed: %v", repairError)
 	}
 
 	return versions, nil
