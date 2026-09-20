@@ -174,3 +174,44 @@ func TestNodeCountReturnsPhysicalNodeCount(t *testing.T) {
 		)
 	}
 }
+
+func TestConfigurationIsSortedAndIndependent(t *testing.T) {
+	r := New(32)
+
+	r.AddNode(Node{
+		ID:      "node-2",
+		Address: "localhost:50052",
+	})
+	r.AddNode(Node{
+		ID:      "node-1",
+		Address: "localhost:50051",
+	})
+
+	virtualNodes, nodes := r.Configuration()
+
+	if virtualNodes != 32 {
+		t.Fatalf(
+			"virtual-node count = %d; want 32",
+			virtualNodes,
+		)
+	}
+
+	if len(nodes) != 2 ||
+		nodes[0].ID != "node-1" ||
+		nodes[1].ID != "node-2" {
+		t.Fatalf("incorrect node order: %+v", nodes)
+	}
+
+	nodes[0].ID = "changed"
+	nodes = append(nodes, Node{ID: "injected"})
+
+	_, unchanged := r.Configuration()
+
+	if len(unchanged) != 2 ||
+		unchanged[0].ID != "node-1" {
+		t.Fatalf(
+			"returned configuration exposed ring state: %+v",
+			unchanged,
+		)
+	}
+}
