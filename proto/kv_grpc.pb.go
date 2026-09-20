@@ -25,6 +25,8 @@ const (
 	KeyValueStore_ApplyReplicaRecord_FullMethodName = "/kv.KeyValueStore/ApplyReplicaRecord"
 	KeyValueStore_ReadReplicaRecord_FullMethodName  = "/kv.KeyValueStore/ReadReplicaRecord"
 	KeyValueStore_Resolve_FullMethodName            = "/kv.KeyValueStore/Resolve"
+	KeyValueStore_AntiEntropySummary_FullMethodName = "/kv.KeyValueStore/AntiEntropySummary"
+	KeyValueStore_AntiEntropyBucket_FullMethodName  = "/kv.KeyValueStore/AntiEntropyBucket"
 )
 
 // KeyValueStoreClient is the client API for KeyValueStore service.
@@ -37,6 +39,8 @@ type KeyValueStoreClient interface {
 	ApplyReplicaRecord(ctx context.Context, in *ReplicaRecordRequest, opts ...grpc.CallOption) (*ReplicaRecordResponse, error)
 	ReadReplicaRecord(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*ReplicaRecordReadResponse, error)
 	Resolve(ctx context.Context, in *ResolveRequest, opts ...grpc.CallOption) (*ResolveResponse, error)
+	AntiEntropySummary(ctx context.Context, in *AntiEntropySummaryRequest, opts ...grpc.CallOption) (*AntiEntropySummaryResponse, error)
+	AntiEntropyBucket(ctx context.Context, in *AntiEntropyBucketRequest, opts ...grpc.CallOption) (*AntiEntropyBucketResponse, error)
 }
 
 type keyValueStoreClient struct {
@@ -107,6 +111,26 @@ func (c *keyValueStoreClient) Resolve(ctx context.Context, in *ResolveRequest, o
 	return out, nil
 }
 
+func (c *keyValueStoreClient) AntiEntropySummary(ctx context.Context, in *AntiEntropySummaryRequest, opts ...grpc.CallOption) (*AntiEntropySummaryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AntiEntropySummaryResponse)
+	err := c.cc.Invoke(ctx, KeyValueStore_AntiEntropySummary_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *keyValueStoreClient) AntiEntropyBucket(ctx context.Context, in *AntiEntropyBucketRequest, opts ...grpc.CallOption) (*AntiEntropyBucketResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AntiEntropyBucketResponse)
+	err := c.cc.Invoke(ctx, KeyValueStore_AntiEntropyBucket_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KeyValueStoreServer is the server API for KeyValueStore service.
 // All implementations must embed UnimplementedKeyValueStoreServer
 // for forward compatibility.
@@ -117,6 +141,8 @@ type KeyValueStoreServer interface {
 	ApplyReplicaRecord(context.Context, *ReplicaRecordRequest) (*ReplicaRecordResponse, error)
 	ReadReplicaRecord(context.Context, *GetRequest) (*ReplicaRecordReadResponse, error)
 	Resolve(context.Context, *ResolveRequest) (*ResolveResponse, error)
+	AntiEntropySummary(context.Context, *AntiEntropySummaryRequest) (*AntiEntropySummaryResponse, error)
+	AntiEntropyBucket(context.Context, *AntiEntropyBucketRequest) (*AntiEntropyBucketResponse, error)
 	mustEmbedUnimplementedKeyValueStoreServer()
 }
 
@@ -144,6 +170,12 @@ func (UnimplementedKeyValueStoreServer) ReadReplicaRecord(context.Context, *GetR
 }
 func (UnimplementedKeyValueStoreServer) Resolve(context.Context, *ResolveRequest) (*ResolveResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Resolve not implemented")
+}
+func (UnimplementedKeyValueStoreServer) AntiEntropySummary(context.Context, *AntiEntropySummaryRequest) (*AntiEntropySummaryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AntiEntropySummary not implemented")
+}
+func (UnimplementedKeyValueStoreServer) AntiEntropyBucket(context.Context, *AntiEntropyBucketRequest) (*AntiEntropyBucketResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AntiEntropyBucket not implemented")
 }
 func (UnimplementedKeyValueStoreServer) mustEmbedUnimplementedKeyValueStoreServer() {}
 func (UnimplementedKeyValueStoreServer) testEmbeddedByValue()                       {}
@@ -274,6 +306,42 @@ func _KeyValueStore_Resolve_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KeyValueStore_AntiEntropySummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AntiEntropySummaryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeyValueStoreServer).AntiEntropySummary(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KeyValueStore_AntiEntropySummary_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeyValueStoreServer).AntiEntropySummary(ctx, req.(*AntiEntropySummaryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KeyValueStore_AntiEntropyBucket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AntiEntropyBucketRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeyValueStoreServer).AntiEntropyBucket(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KeyValueStore_AntiEntropyBucket_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeyValueStoreServer).AntiEntropyBucket(ctx, req.(*AntiEntropyBucketRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KeyValueStore_ServiceDesc is the grpc.ServiceDesc for KeyValueStore service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -304,6 +372,14 @@ var KeyValueStore_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Resolve",
 			Handler:    _KeyValueStore_Resolve_Handler,
+		},
+		{
+			MethodName: "AntiEntropySummary",
+			Handler:    _KeyValueStore_AntiEntropySummary_Handler,
+		},
+		{
+			MethodName: "AntiEntropyBucket",
+			Handler:    _KeyValueStore_AntiEntropyBucket_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

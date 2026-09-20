@@ -25,6 +25,9 @@ type GRPCServer struct {
 	readQuorum        int
 	writeQuorum       int
 	hintQueue         *handoff.Queue
+	antiEntropyMu     sync.Mutex
+	antiEntropyCancel context.CancelFunc
+	antiEntropyDone   chan struct{}
 }
 
 func New(

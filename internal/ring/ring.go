@@ -63,6 +63,29 @@ func (r *Ring) NodeCount() int {
 	return len(r.nodes)
 }
 
+// Configuration returns the virtual-node count and an independent,
+// deterministically ordered copy of all physical nodes.
+func (r *Ring) Configuration() (int, []Node) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	nodes := make([]Node, 0, len(r.nodes))
+
+	for _, node := range r.nodes {
+		nodes = append(nodes, node)
+	}
+
+	sort.Slice(nodes, func(i, j int) bool {
+		if nodes[i].ID == nodes[j].ID {
+			return nodes[i].Address < nodes[j].Address
+		}
+
+		return nodes[i].ID < nodes[j].ID
+	})
+
+	return r.virtualNodeCount, nodes
+}
+
 func (r *Ring) GetReplicas(
 	key string,
 	replicationFactor int,

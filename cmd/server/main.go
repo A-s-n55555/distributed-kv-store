@@ -47,6 +47,11 @@ func main() {
 		2,
 		"Number of successful replica writes required",
 	)
+	antiEntropyInterval := flag.Duration(
+		"anti-entropy-interval",
+		10*time.Second,
+		"Interval between anti-entropy synchronization rounds",
+	)
 	flag.Parse()
 
 	clusterRing, err := buildRing(*nodes)
@@ -142,13 +147,14 @@ func main() {
 	)
 
 	log.Printf(
-		"node %s listening on %s; WAL: %s; N=%d R=%d W=%d",
+		"node %s listening on %s; WAL: %s; N=%d R=%d W=%d; anti-entropy=%s",
 		*nodeID,
 		*address,
 		walPath,
 		*replicationFactor,
 		*readQuorum,
 		*writeQuorum,
+		*antiEntropyInterval,
 	)
 
 	serverContext, cancelServer := signal.NotifyContext(
@@ -157,6 +163,16 @@ func main() {
 		syscall.SIGTERM,
 	)
 	defer cancelServer()
+
+	if err := kvService.StartAntiEntropy(
+		serverContext,
+		*antiEntropyInterval,
+	); err != nil {
+		log.Fatalf(
+			"failed to start anti-entropy worker: %v",
+			err,
+		)
+	}
 
 	hintWorkerDone := make(chan struct{})
 
@@ -191,6 +207,12 @@ func main() {
 	}
 
 	cancelServer()
+
+	// Stop anti-entropy before shutting down gRPC so it cannot start
+	// another peer request during server shutdown.
+	kvService.StopAntiEntropy()
+
+	// Allow active requests to finish, with a bounded shutdown wait.
 
 	// Allow active requests to finish, with a bounded shutdown wait.
 	grpcStopped := make(chan struct{})

@@ -627,6 +627,326 @@ func (*ResolveResponse) Descriptor() ([]byte, []int) {
 	return file_proto_kv_proto_rawDescGZIP(), []int{11}
 }
 
+// Requests a Merkle summary for data shared by requester and responder.
+type AntiEntropySummaryRequest struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	RequesterNodeId     string                 `protobuf:"bytes,1,opt,name=requester_node_id,json=requesterNodeId,proto3" json:"requester_node_id,omitempty"`
+	ReplicationFactor   int32                  `protobuf:"varint,2,opt,name=replication_factor,json=replicationFactor,proto3" json:"replication_factor,omitempty"`
+	ConfigurationDigest []byte                 `protobuf:"bytes,3,opt,name=configuration_digest,json=configurationDigest,proto3" json:"configuration_digest,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *AntiEntropySummaryRequest) Reset() {
+	*x = AntiEntropySummaryRequest{}
+	mi := &file_proto_kv_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AntiEntropySummaryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AntiEntropySummaryRequest) ProtoMessage() {}
+
+func (x *AntiEntropySummaryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_kv_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AntiEntropySummaryRequest.ProtoReflect.Descriptor instead.
+func (*AntiEntropySummaryRequest) Descriptor() ([]byte, []int) {
+	return file_proto_kv_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *AntiEntropySummaryRequest) GetRequesterNodeId() string {
+	if x != nil {
+		return x.RequesterNodeId
+	}
+	return ""
+}
+
+func (x *AntiEntropySummaryRequest) GetReplicationFactor() int32 {
+	if x != nil {
+		return x.ReplicationFactor
+	}
+	return 0
+}
+
+func (x *AntiEntropySummaryRequest) GetConfigurationDigest() []byte {
+	if x != nil {
+		return x.ConfigurationDigest
+	}
+	return nil
+}
+
+type AntiEntropySummaryResponse struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	ResponderNodeId     string                 `protobuf:"bytes,1,opt,name=responder_node_id,json=responderNodeId,proto3" json:"responder_node_id,omitempty"`
+	ConfigurationDigest []byte                 `protobuf:"bytes,2,opt,name=configuration_digest,json=configurationDigest,proto3" json:"configuration_digest,omitempty"`
+	RootDigest          []byte                 `protobuf:"bytes,3,opt,name=root_digest,json=rootDigest,proto3" json:"root_digest,omitempty"`
+	// Index in this array is the anti-entropy bucket number.
+	// Every entry must be a SHA-256 digest.
+	BucketDigests [][]byte `protobuf:"bytes,4,rep,name=bucket_digests,json=bucketDigests,proto3" json:"bucket_digests,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AntiEntropySummaryResponse) Reset() {
+	*x = AntiEntropySummaryResponse{}
+	mi := &file_proto_kv_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AntiEntropySummaryResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AntiEntropySummaryResponse) ProtoMessage() {}
+
+func (x *AntiEntropySummaryResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_kv_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AntiEntropySummaryResponse.ProtoReflect.Descriptor instead.
+func (*AntiEntropySummaryResponse) Descriptor() ([]byte, []int) {
+	return file_proto_kv_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *AntiEntropySummaryResponse) GetResponderNodeId() string {
+	if x != nil {
+		return x.ResponderNodeId
+	}
+	return ""
+}
+
+func (x *AntiEntropySummaryResponse) GetConfigurationDigest() []byte {
+	if x != nil {
+		return x.ConfigurationDigest
+	}
+	return nil
+}
+
+func (x *AntiEntropySummaryResponse) GetRootDigest() []byte {
+	if x != nil {
+		return x.RootDigest
+	}
+	return nil
+}
+
+func (x *AntiEntropySummaryResponse) GetBucketDigests() [][]byte {
+	if x != nil {
+		return x.BucketDigests
+	}
+	return nil
+}
+
+// Requests records in one differing shared-data bucket.
+type AntiEntropyBucketRequest struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	RequesterNodeId     string                 `protobuf:"bytes,1,opt,name=requester_node_id,json=requesterNodeId,proto3" json:"requester_node_id,omitempty"`
+	ReplicationFactor   int32                  `protobuf:"varint,2,opt,name=replication_factor,json=replicationFactor,proto3" json:"replication_factor,omitempty"`
+	ConfigurationDigest []byte                 `protobuf:"bytes,3,opt,name=configuration_digest,json=configurationDigest,proto3" json:"configuration_digest,omitempty"`
+	Bucket              int32                  `protobuf:"varint,4,opt,name=bucket,proto3" json:"bucket,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *AntiEntropyBucketRequest) Reset() {
+	*x = AntiEntropyBucketRequest{}
+	mi := &file_proto_kv_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AntiEntropyBucketRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AntiEntropyBucketRequest) ProtoMessage() {}
+
+func (x *AntiEntropyBucketRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_kv_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AntiEntropyBucketRequest.ProtoReflect.Descriptor instead.
+func (*AntiEntropyBucketRequest) Descriptor() ([]byte, []int) {
+	return file_proto_kv_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *AntiEntropyBucketRequest) GetRequesterNodeId() string {
+	if x != nil {
+		return x.RequesterNodeId
+	}
+	return ""
+}
+
+func (x *AntiEntropyBucketRequest) GetReplicationFactor() int32 {
+	if x != nil {
+		return x.ReplicationFactor
+	}
+	return 0
+}
+
+func (x *AntiEntropyBucketRequest) GetConfigurationDigest() []byte {
+	if x != nil {
+		return x.ConfigurationDigest
+	}
+	return nil
+}
+
+func (x *AntiEntropyBucketRequest) GetBucket() int32 {
+	if x != nil {
+		return x.Bucket
+	}
+	return 0
+}
+
+type AntiEntropyKeyState struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           int64                  `protobuf:"varint,1,opt,name=key,proto3" json:"key,omitempty"`
+	Records       []*VersionedRecord     `protobuf:"bytes,2,rep,name=records,proto3" json:"records,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AntiEntropyKeyState) Reset() {
+	*x = AntiEntropyKeyState{}
+	mi := &file_proto_kv_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AntiEntropyKeyState) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AntiEntropyKeyState) ProtoMessage() {}
+
+func (x *AntiEntropyKeyState) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_kv_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AntiEntropyKeyState.ProtoReflect.Descriptor instead.
+func (*AntiEntropyKeyState) Descriptor() ([]byte, []int) {
+	return file_proto_kv_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *AntiEntropyKeyState) GetKey() int64 {
+	if x != nil {
+		return x.Key
+	}
+	return 0
+}
+
+func (x *AntiEntropyKeyState) GetRecords() []*VersionedRecord {
+	if x != nil {
+		return x.Records
+	}
+	return nil
+}
+
+type AntiEntropyBucketResponse struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	ResponderNodeId     string                 `protobuf:"bytes,1,opt,name=responder_node_id,json=responderNodeId,proto3" json:"responder_node_id,omitempty"`
+	ConfigurationDigest []byte                 `protobuf:"bytes,2,opt,name=configuration_digest,json=configurationDigest,proto3" json:"configuration_digest,omitempty"`
+	Bucket              int32                  `protobuf:"varint,3,opt,name=bucket,proto3" json:"bucket,omitempty"`
+	Keys                []*AntiEntropyKeyState `protobuf:"bytes,4,rep,name=keys,proto3" json:"keys,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *AntiEntropyBucketResponse) Reset() {
+	*x = AntiEntropyBucketResponse{}
+	mi := &file_proto_kv_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AntiEntropyBucketResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AntiEntropyBucketResponse) ProtoMessage() {}
+
+func (x *AntiEntropyBucketResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_kv_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AntiEntropyBucketResponse.ProtoReflect.Descriptor instead.
+func (*AntiEntropyBucketResponse) Descriptor() ([]byte, []int) {
+	return file_proto_kv_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *AntiEntropyBucketResponse) GetResponderNodeId() string {
+	if x != nil {
+		return x.ResponderNodeId
+	}
+	return ""
+}
+
+func (x *AntiEntropyBucketResponse) GetConfigurationDigest() []byte {
+	if x != nil {
+		return x.ConfigurationDigest
+	}
+	return nil
+}
+
+func (x *AntiEntropyBucketResponse) GetBucket() int32 {
+	if x != nil {
+		return x.Bucket
+	}
+	return 0
+}
+
+func (x *AntiEntropyBucketResponse) GetKeys() []*AntiEntropyKeyState {
+	if x != nil {
+		return x.Keys
+	}
+	return nil
+}
+
 var File_proto_kv_proto protoreflect.FileDescriptor
 
 const file_proto_kv_proto_rawDesc = "" +
@@ -676,14 +996,39 @@ const file_proto_kv_proto_rawDesc = "" +
 	"\fContextEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x04R\x05value:\x028\x01\"\x11\n" +
-	"\x0fResolveResponse2\xd3\x02\n" +
+	"\x0fResolveResponse\"\xa9\x01\n" +
+	"\x19AntiEntropySummaryRequest\x12*\n" +
+	"\x11requester_node_id\x18\x01 \x01(\tR\x0frequesterNodeId\x12-\n" +
+	"\x12replication_factor\x18\x02 \x01(\x05R\x11replicationFactor\x121\n" +
+	"\x14configuration_digest\x18\x03 \x01(\fR\x13configurationDigest\"\xc3\x01\n" +
+	"\x1aAntiEntropySummaryResponse\x12*\n" +
+	"\x11responder_node_id\x18\x01 \x01(\tR\x0fresponderNodeId\x121\n" +
+	"\x14configuration_digest\x18\x02 \x01(\fR\x13configurationDigest\x12\x1f\n" +
+	"\vroot_digest\x18\x03 \x01(\fR\n" +
+	"rootDigest\x12%\n" +
+	"\x0ebucket_digests\x18\x04 \x03(\fR\rbucketDigests\"\xc0\x01\n" +
+	"\x18AntiEntropyBucketRequest\x12*\n" +
+	"\x11requester_node_id\x18\x01 \x01(\tR\x0frequesterNodeId\x12-\n" +
+	"\x12replication_factor\x18\x02 \x01(\x05R\x11replicationFactor\x121\n" +
+	"\x14configuration_digest\x18\x03 \x01(\fR\x13configurationDigest\x12\x16\n" +
+	"\x06bucket\x18\x04 \x01(\x05R\x06bucket\"V\n" +
+	"\x13AntiEntropyKeyState\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\x03R\x03key\x12-\n" +
+	"\arecords\x18\x02 \x03(\v2\x13.kv.VersionedRecordR\arecords\"\xbf\x01\n" +
+	"\x19AntiEntropyBucketResponse\x12*\n" +
+	"\x11responder_node_id\x18\x01 \x01(\tR\x0fresponderNodeId\x121\n" +
+	"\x14configuration_digest\x18\x02 \x01(\fR\x13configurationDigest\x12\x16\n" +
+	"\x06bucket\x18\x03 \x01(\x05R\x06bucket\x12+\n" +
+	"\x04keys\x18\x04 \x03(\v2\x17.kv.AntiEntropyKeyStateR\x04keys2\xfa\x03\n" +
 	"\rKeyValueStore\x12&\n" +
 	"\x03Put\x12\x0e.kv.PutRequest\x1a\x0f.kv.PutResponse\x12&\n" +
 	"\x03Get\x12\x0e.kv.GetRequest\x1a\x0f.kv.GetResponse\x12/\n" +
 	"\x06Delete\x12\x11.kv.DeleteRequest\x1a\x12.kv.DeleteResponse\x12I\n" +
 	"\x12ApplyReplicaRecord\x12\x18.kv.ReplicaRecordRequest\x1a\x19.kv.ReplicaRecordResponse\x12B\n" +
 	"\x11ReadReplicaRecord\x12\x0e.kv.GetRequest\x1a\x1d.kv.ReplicaRecordReadResponse\x122\n" +
-	"\aResolve\x12\x12.kv.ResolveRequest\x1a\x13.kv.ResolveResponseB7Z5github.com/A-s-n55555/distributed-kv-store/proto;kvpbb\x06proto3"
+	"\aResolve\x12\x12.kv.ResolveRequest\x1a\x13.kv.ResolveResponse\x12S\n" +
+	"\x12AntiEntropySummary\x12\x1d.kv.AntiEntropySummaryRequest\x1a\x1e.kv.AntiEntropySummaryResponse\x12P\n" +
+	"\x11AntiEntropyBucket\x12\x1c.kv.AntiEntropyBucketRequest\x1a\x1d.kv.AntiEntropyBucketResponseB7Z5github.com/A-s-n55555/distributed-kv-store/proto;kvpbb\x06proto3"
 
 var (
 	file_proto_kv_proto_rawDescOnce sync.Once
@@ -697,49 +1042,60 @@ func file_proto_kv_proto_rawDescGZIP() []byte {
 	return file_proto_kv_proto_rawDescData
 }
 
-var file_proto_kv_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_proto_kv_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_proto_kv_proto_goTypes = []any{
-	(*PutRequest)(nil),                // 0: kv.PutRequest
-	(*PutResponse)(nil),               // 1: kv.PutResponse
-	(*GetRequest)(nil),                // 2: kv.GetRequest
-	(*GetResponse)(nil),               // 3: kv.GetResponse
-	(*DeleteRequest)(nil),             // 4: kv.DeleteRequest
-	(*DeleteResponse)(nil),            // 5: kv.DeleteResponse
-	(*VersionedRecord)(nil),           // 6: kv.VersionedRecord
-	(*ReplicaRecordRequest)(nil),      // 7: kv.ReplicaRecordRequest
-	(*ReplicaRecordResponse)(nil),     // 8: kv.ReplicaRecordResponse
-	(*ReplicaRecordReadResponse)(nil), // 9: kv.ReplicaRecordReadResponse
-	(*ResolveRequest)(nil),            // 10: kv.ResolveRequest
-	(*ResolveResponse)(nil),           // 11: kv.ResolveResponse
-	nil,                               // 12: kv.GetResponse.ContextEntry
-	nil,                               // 13: kv.VersionedRecord.ClockEntry
-	nil,                               // 14: kv.ResolveRequest.ContextEntry
+	(*PutRequest)(nil),                 // 0: kv.PutRequest
+	(*PutResponse)(nil),                // 1: kv.PutResponse
+	(*GetRequest)(nil),                 // 2: kv.GetRequest
+	(*GetResponse)(nil),                // 3: kv.GetResponse
+	(*DeleteRequest)(nil),              // 4: kv.DeleteRequest
+	(*DeleteResponse)(nil),             // 5: kv.DeleteResponse
+	(*VersionedRecord)(nil),            // 6: kv.VersionedRecord
+	(*ReplicaRecordRequest)(nil),       // 7: kv.ReplicaRecordRequest
+	(*ReplicaRecordResponse)(nil),      // 8: kv.ReplicaRecordResponse
+	(*ReplicaRecordReadResponse)(nil),  // 9: kv.ReplicaRecordReadResponse
+	(*ResolveRequest)(nil),             // 10: kv.ResolveRequest
+	(*ResolveResponse)(nil),            // 11: kv.ResolveResponse
+	(*AntiEntropySummaryRequest)(nil),  // 12: kv.AntiEntropySummaryRequest
+	(*AntiEntropySummaryResponse)(nil), // 13: kv.AntiEntropySummaryResponse
+	(*AntiEntropyBucketRequest)(nil),   // 14: kv.AntiEntropyBucketRequest
+	(*AntiEntropyKeyState)(nil),        // 15: kv.AntiEntropyKeyState
+	(*AntiEntropyBucketResponse)(nil),  // 16: kv.AntiEntropyBucketResponse
+	nil,                                // 17: kv.GetResponse.ContextEntry
+	nil,                                // 18: kv.VersionedRecord.ClockEntry
+	nil,                                // 19: kv.ResolveRequest.ContextEntry
 }
 var file_proto_kv_proto_depIdxs = []int32{
 	6,  // 0: kv.GetResponse.versions:type_name -> kv.VersionedRecord
-	12, // 1: kv.GetResponse.context:type_name -> kv.GetResponse.ContextEntry
-	13, // 2: kv.VersionedRecord.clock:type_name -> kv.VersionedRecord.ClockEntry
+	17, // 1: kv.GetResponse.context:type_name -> kv.GetResponse.ContextEntry
+	18, // 2: kv.VersionedRecord.clock:type_name -> kv.VersionedRecord.ClockEntry
 	6,  // 3: kv.ReplicaRecordRequest.record:type_name -> kv.VersionedRecord
 	6,  // 4: kv.ReplicaRecordReadResponse.record:type_name -> kv.VersionedRecord
 	6,  // 5: kv.ReplicaRecordReadResponse.records:type_name -> kv.VersionedRecord
-	14, // 6: kv.ResolveRequest.context:type_name -> kv.ResolveRequest.ContextEntry
-	0,  // 7: kv.KeyValueStore.Put:input_type -> kv.PutRequest
-	2,  // 8: kv.KeyValueStore.Get:input_type -> kv.GetRequest
-	4,  // 9: kv.KeyValueStore.Delete:input_type -> kv.DeleteRequest
-	7,  // 10: kv.KeyValueStore.ApplyReplicaRecord:input_type -> kv.ReplicaRecordRequest
-	2,  // 11: kv.KeyValueStore.ReadReplicaRecord:input_type -> kv.GetRequest
-	10, // 12: kv.KeyValueStore.Resolve:input_type -> kv.ResolveRequest
-	1,  // 13: kv.KeyValueStore.Put:output_type -> kv.PutResponse
-	3,  // 14: kv.KeyValueStore.Get:output_type -> kv.GetResponse
-	5,  // 15: kv.KeyValueStore.Delete:output_type -> kv.DeleteResponse
-	8,  // 16: kv.KeyValueStore.ApplyReplicaRecord:output_type -> kv.ReplicaRecordResponse
-	9,  // 17: kv.KeyValueStore.ReadReplicaRecord:output_type -> kv.ReplicaRecordReadResponse
-	11, // 18: kv.KeyValueStore.Resolve:output_type -> kv.ResolveResponse
-	13, // [13:19] is the sub-list for method output_type
-	7,  // [7:13] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	19, // 6: kv.ResolveRequest.context:type_name -> kv.ResolveRequest.ContextEntry
+	6,  // 7: kv.AntiEntropyKeyState.records:type_name -> kv.VersionedRecord
+	15, // 8: kv.AntiEntropyBucketResponse.keys:type_name -> kv.AntiEntropyKeyState
+	0,  // 9: kv.KeyValueStore.Put:input_type -> kv.PutRequest
+	2,  // 10: kv.KeyValueStore.Get:input_type -> kv.GetRequest
+	4,  // 11: kv.KeyValueStore.Delete:input_type -> kv.DeleteRequest
+	7,  // 12: kv.KeyValueStore.ApplyReplicaRecord:input_type -> kv.ReplicaRecordRequest
+	2,  // 13: kv.KeyValueStore.ReadReplicaRecord:input_type -> kv.GetRequest
+	10, // 14: kv.KeyValueStore.Resolve:input_type -> kv.ResolveRequest
+	12, // 15: kv.KeyValueStore.AntiEntropySummary:input_type -> kv.AntiEntropySummaryRequest
+	14, // 16: kv.KeyValueStore.AntiEntropyBucket:input_type -> kv.AntiEntropyBucketRequest
+	1,  // 17: kv.KeyValueStore.Put:output_type -> kv.PutResponse
+	3,  // 18: kv.KeyValueStore.Get:output_type -> kv.GetResponse
+	5,  // 19: kv.KeyValueStore.Delete:output_type -> kv.DeleteResponse
+	8,  // 20: kv.KeyValueStore.ApplyReplicaRecord:output_type -> kv.ReplicaRecordResponse
+	9,  // 21: kv.KeyValueStore.ReadReplicaRecord:output_type -> kv.ReplicaRecordReadResponse
+	11, // 22: kv.KeyValueStore.Resolve:output_type -> kv.ResolveResponse
+	13, // 23: kv.KeyValueStore.AntiEntropySummary:output_type -> kv.AntiEntropySummaryResponse
+	16, // 24: kv.KeyValueStore.AntiEntropyBucket:output_type -> kv.AntiEntropyBucketResponse
+	17, // [17:25] is the sub-list for method output_type
+	9,  // [9:17] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_proto_kv_proto_init() }
@@ -753,7 +1109,7 @@ func file_proto_kv_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_kv_proto_rawDesc), len(file_proto_kv_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
