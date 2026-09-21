@@ -63,7 +63,21 @@ func main() {
 		"",
 		"File containing a shared 64-character hex token for local membership control",
 	)
+	stagingJoin := flag.Bool("staging-join", false, "Serve only staged replica records")
+	stagingActiveFile := flag.String("staging-active-file", "", "Old active membership file")
+	stagingCandidateFile := flag.String("staging-candidate-file", "", "Validated join candidate file")
+
 	flag.Parse()
+
+	if *stagingJoin {
+		if err := runStagingJoin(
+			*nodeID, *address, *dataDir,
+			*stagingActiveFile, *stagingCandidateFile,
+		); err != nil {
+			log.Fatalf("staging join: %v", err)
+		}
+		return
+	}
 
 	clusterRing, err := buildRing(*nodes)
 	if err != nil {

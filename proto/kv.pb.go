@@ -21,6 +21,55 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type JoinDecision int32
+
+const (
+	JoinDecision_JOIN_DECISION_UNDECIDED JoinDecision = 0
+	JoinDecision_JOIN_DECISION_COMMIT    JoinDecision = 1
+	JoinDecision_JOIN_DECISION_ABORT     JoinDecision = 2
+)
+
+// Enum value maps for JoinDecision.
+var (
+	JoinDecision_name = map[int32]string{
+		0: "JOIN_DECISION_UNDECIDED",
+		1: "JOIN_DECISION_COMMIT",
+		2: "JOIN_DECISION_ABORT",
+	}
+	JoinDecision_value = map[string]int32{
+		"JOIN_DECISION_UNDECIDED": 0,
+		"JOIN_DECISION_COMMIT":    1,
+		"JOIN_DECISION_ABORT":     2,
+	}
+)
+
+func (x JoinDecision) Enum() *JoinDecision {
+	p := new(JoinDecision)
+	*p = x
+	return p
+}
+
+func (x JoinDecision) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (JoinDecision) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_kv_proto_enumTypes[0].Descriptor()
+}
+
+func (JoinDecision) Type() protoreflect.EnumType {
+	return &file_proto_kv_proto_enumTypes[0]
+}
+
+func (x JoinDecision) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use JoinDecision.Descriptor instead.
+func (JoinDecision) EnumDescriptor() ([]byte, []int) {
+	return file_proto_kv_proto_rawDescGZIP(), []int{0}
+}
+
 type PutRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Key           int64                  `protobuf:"varint,1,opt,name=key,proto3" json:"key,omitempty"`
@@ -991,6 +1040,7 @@ type MembershipStatusResponse struct {
 	WritesPaused  bool                   `protobuf:"varint,4,opt,name=writes_paused,json=writesPaused,proto3" json:"writes_paused,omitempty"`
 	PendingEpoch  uint64                 `protobuf:"varint,5,opt,name=pending_epoch,json=pendingEpoch,proto3" json:"pending_epoch,omitempty"`
 	PendingDigest []byte                 `protobuf:"bytes,6,opt,name=pending_digest,json=pendingDigest,proto3" json:"pending_digest,omitempty"`
+	JoinCommitted bool                   `protobuf:"varint,7,opt,name=join_committed,json=joinCommitted,proto3" json:"join_committed,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1065,6 +1115,13 @@ func (x *MembershipStatusResponse) GetPendingDigest() []byte {
 		return x.PendingDigest
 	}
 	return nil
+}
+
+func (x *MembershipStatusResponse) GetJoinCommitted() bool {
+	if x != nil {
+		return x.JoinCommitted
+	}
+	return false
 }
 
 type PrepareJoinPauseRequest struct {
@@ -1151,6 +1208,90 @@ func (x *PrepareJoinPauseRequest) GetJoiningNodeAddress() string {
 	return ""
 }
 
+type JoinDecisionResponse struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	CoordinatorNodeId string                 `protobuf:"bytes,1,opt,name=coordinator_node_id,json=coordinatorNodeId,proto3" json:"coordinator_node_id,omitempty"`
+	ActiveEpoch       uint64                 `protobuf:"varint,2,opt,name=active_epoch,json=activeEpoch,proto3" json:"active_epoch,omitempty"`
+	ActiveDigest      []byte                 `protobuf:"bytes,3,opt,name=active_digest,json=activeDigest,proto3" json:"active_digest,omitempty"`
+	CandidateEpoch    uint64                 `protobuf:"varint,4,opt,name=candidate_epoch,json=candidateEpoch,proto3" json:"candidate_epoch,omitempty"`
+	CandidateDigest   []byte                 `protobuf:"bytes,5,opt,name=candidate_digest,json=candidateDigest,proto3" json:"candidate_digest,omitempty"`
+	Decision          JoinDecision           `protobuf:"varint,6,opt,name=decision,proto3,enum=kv.JoinDecision" json:"decision,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *JoinDecisionResponse) Reset() {
+	*x = JoinDecisionResponse{}
+	mi := &file_proto_kv_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *JoinDecisionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JoinDecisionResponse) ProtoMessage() {}
+
+func (x *JoinDecisionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_kv_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JoinDecisionResponse.ProtoReflect.Descriptor instead.
+func (*JoinDecisionResponse) Descriptor() ([]byte, []int) {
+	return file_proto_kv_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *JoinDecisionResponse) GetCoordinatorNodeId() string {
+	if x != nil {
+		return x.CoordinatorNodeId
+	}
+	return ""
+}
+
+func (x *JoinDecisionResponse) GetActiveEpoch() uint64 {
+	if x != nil {
+		return x.ActiveEpoch
+	}
+	return 0
+}
+
+func (x *JoinDecisionResponse) GetActiveDigest() []byte {
+	if x != nil {
+		return x.ActiveDigest
+	}
+	return nil
+}
+
+func (x *JoinDecisionResponse) GetCandidateEpoch() uint64 {
+	if x != nil {
+		return x.CandidateEpoch
+	}
+	return 0
+}
+
+func (x *JoinDecisionResponse) GetCandidateDigest() []byte {
+	if x != nil {
+		return x.CandidateDigest
+	}
+	return nil
+}
+
+func (x *JoinDecisionResponse) GetDecision() JoinDecision {
+	if x != nil {
+		return x.Decision
+	}
+	return JoinDecision_JOIN_DECISION_UNDECIDED
+}
+
 var File_proto_kv_proto protoreflect.FileDescriptor
 
 const file_proto_kv_proto_rawDesc = "" +
@@ -1224,21 +1365,33 @@ const file_proto_kv_proto_rawDesc = "" +
 	"\x14configuration_digest\x18\x02 \x01(\fR\x13configurationDigest\x12\x16\n" +
 	"\x06bucket\x18\x03 \x01(\x05R\x06bucket\x12+\n" +
 	"\x04keys\x18\x04 \x03(\v2\x17.kv.AntiEntropyKeyStateR\x04keys\"\x19\n" +
-	"\x17MembershipStatusRequest\"\xec\x01\n" +
+	"\x17MembershipStatusRequest\"\x93\x02\n" +
 	"\x18MembershipStatusResponse\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12!\n" +
 	"\factive_epoch\x18\x02 \x01(\x04R\vactiveEpoch\x12#\n" +
 	"\ractive_digest\x18\x03 \x01(\fR\factiveDigest\x12#\n" +
 	"\rwrites_paused\x18\x04 \x01(\bR\fwritesPaused\x12#\n" +
 	"\rpending_epoch\x18\x05 \x01(\x04R\fpendingEpoch\x12%\n" +
-	"\x0epending_digest\x18\x06 \x01(\fR\rpendingDigest\"\x8f\x02\n" +
+	"\x0epending_digest\x18\x06 \x01(\fR\rpendingDigest\x12%\n" +
+	"\x0ejoin_committed\x18\a \x01(\bR\rjoinCommitted\"\x8f\x02\n" +
 	"\x17PrepareJoinPauseRequest\x12!\n" +
 	"\factive_epoch\x18\x01 \x01(\x04R\vactiveEpoch\x12#\n" +
 	"\ractive_digest\x18\x02 \x01(\fR\factiveDigest\x12'\n" +
 	"\x0fcandidate_epoch\x18\x03 \x01(\x04R\x0ecandidateEpoch\x12)\n" +
 	"\x10candidate_digest\x18\x04 \x01(\fR\x0fcandidateDigest\x12&\n" +
 	"\x0fjoining_node_id\x18\x05 \x01(\tR\rjoiningNodeId\x120\n" +
-	"\x14joining_node_address\x18\x06 \x01(\tR\x12joiningNodeAddress2\xe8\x05\n" +
+	"\x14joining_node_address\x18\x06 \x01(\tR\x12joiningNodeAddress\"\x90\x02\n" +
+	"\x14JoinDecisionResponse\x12.\n" +
+	"\x13coordinator_node_id\x18\x01 \x01(\tR\x11coordinatorNodeId\x12!\n" +
+	"\factive_epoch\x18\x02 \x01(\x04R\vactiveEpoch\x12#\n" +
+	"\ractive_digest\x18\x03 \x01(\fR\factiveDigest\x12'\n" +
+	"\x0fcandidate_epoch\x18\x04 \x01(\x04R\x0ecandidateEpoch\x12)\n" +
+	"\x10candidate_digest\x18\x05 \x01(\fR\x0fcandidateDigest\x12,\n" +
+	"\bdecision\x18\x06 \x01(\x0e2\x10.kv.JoinDecisionR\bdecision*^\n" +
+	"\fJoinDecision\x12\x1b\n" +
+	"\x17JOIN_DECISION_UNDECIDED\x10\x00\x12\x18\n" +
+	"\x14JOIN_DECISION_COMMIT\x10\x01\x12\x17\n" +
+	"\x13JOIN_DECISION_ABORT\x10\x022\x80\a\n" +
 	"\rKeyValueStore\x12&\n" +
 	"\x03Put\x12\x0e.kv.PutRequest\x1a\x0f.kv.PutResponse\x12&\n" +
 	"\x03Get\x12\x0e.kv.GetRequest\x1a\x0f.kv.GetResponse\x12/\n" +
@@ -1250,7 +1403,9 @@ const file_proto_kv_proto_rawDesc = "" +
 	"\x11AntiEntropyBucket\x12\x1c.kv.AntiEntropyBucketRequest\x1a\x1d.kv.AntiEntropyBucketResponse\x12P\n" +
 	"\x13GetMembershipStatus\x12\x1b.kv.MembershipStatusRequest\x1a\x1c.kv.MembershipStatusResponse\x12M\n" +
 	"\x10PrepareJoinPause\x12\x1b.kv.PrepareJoinPauseRequest\x1a\x1c.kv.MembershipStatusResponse\x12K\n" +
-	"\x0eAbortJoinPause\x12\x1b.kv.PrepareJoinPauseRequest\x1a\x1c.kv.MembershipStatusResponseB7Z5github.com/A-s-n55555/distributed-kv-store/proto;kvpbb\x06proto3"
+	"\x0eAbortJoinPause\x12\x1b.kv.PrepareJoinPauseRequest\x1a\x1c.kv.MembershipStatusResponse\x12L\n" +
+	"\x0fCommitJoinPause\x12\x1b.kv.PrepareJoinPauseRequest\x1a\x1c.kv.MembershipStatusResponse\x12H\n" +
+	"\x0fGetJoinDecision\x12\x1b.kv.PrepareJoinPauseRequest\x1a\x18.kv.JoinDecisionResponseB7Z5github.com/A-s-n55555/distributed-kv-store/proto;kvpbb\x06proto3"
 
 var (
 	file_proto_kv_proto_rawDescOnce sync.Once
@@ -1264,69 +1419,77 @@ func file_proto_kv_proto_rawDescGZIP() []byte {
 	return file_proto_kv_proto_rawDescData
 }
 
-var file_proto_kv_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_proto_kv_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_proto_kv_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_proto_kv_proto_goTypes = []any{
-	(*PutRequest)(nil),                 // 0: kv.PutRequest
-	(*PutResponse)(nil),                // 1: kv.PutResponse
-	(*GetRequest)(nil),                 // 2: kv.GetRequest
-	(*GetResponse)(nil),                // 3: kv.GetResponse
-	(*DeleteRequest)(nil),              // 4: kv.DeleteRequest
-	(*DeleteResponse)(nil),             // 5: kv.DeleteResponse
-	(*VersionedRecord)(nil),            // 6: kv.VersionedRecord
-	(*ReplicaRecordRequest)(nil),       // 7: kv.ReplicaRecordRequest
-	(*ReplicaRecordResponse)(nil),      // 8: kv.ReplicaRecordResponse
-	(*ReplicaRecordReadResponse)(nil),  // 9: kv.ReplicaRecordReadResponse
-	(*ResolveRequest)(nil),             // 10: kv.ResolveRequest
-	(*ResolveResponse)(nil),            // 11: kv.ResolveResponse
-	(*AntiEntropySummaryRequest)(nil),  // 12: kv.AntiEntropySummaryRequest
-	(*AntiEntropySummaryResponse)(nil), // 13: kv.AntiEntropySummaryResponse
-	(*AntiEntropyBucketRequest)(nil),   // 14: kv.AntiEntropyBucketRequest
-	(*AntiEntropyKeyState)(nil),        // 15: kv.AntiEntropyKeyState
-	(*AntiEntropyBucketResponse)(nil),  // 16: kv.AntiEntropyBucketResponse
-	(*MembershipStatusRequest)(nil),    // 17: kv.MembershipStatusRequest
-	(*MembershipStatusResponse)(nil),   // 18: kv.MembershipStatusResponse
-	(*PrepareJoinPauseRequest)(nil),    // 19: kv.PrepareJoinPauseRequest
-	nil,                                // 20: kv.GetResponse.ContextEntry
-	nil,                                // 21: kv.VersionedRecord.ClockEntry
-	nil,                                // 22: kv.ResolveRequest.ContextEntry
+	(JoinDecision)(0),                  // 0: kv.JoinDecision
+	(*PutRequest)(nil),                 // 1: kv.PutRequest
+	(*PutResponse)(nil),                // 2: kv.PutResponse
+	(*GetRequest)(nil),                 // 3: kv.GetRequest
+	(*GetResponse)(nil),                // 4: kv.GetResponse
+	(*DeleteRequest)(nil),              // 5: kv.DeleteRequest
+	(*DeleteResponse)(nil),             // 6: kv.DeleteResponse
+	(*VersionedRecord)(nil),            // 7: kv.VersionedRecord
+	(*ReplicaRecordRequest)(nil),       // 8: kv.ReplicaRecordRequest
+	(*ReplicaRecordResponse)(nil),      // 9: kv.ReplicaRecordResponse
+	(*ReplicaRecordReadResponse)(nil),  // 10: kv.ReplicaRecordReadResponse
+	(*ResolveRequest)(nil),             // 11: kv.ResolveRequest
+	(*ResolveResponse)(nil),            // 12: kv.ResolveResponse
+	(*AntiEntropySummaryRequest)(nil),  // 13: kv.AntiEntropySummaryRequest
+	(*AntiEntropySummaryResponse)(nil), // 14: kv.AntiEntropySummaryResponse
+	(*AntiEntropyBucketRequest)(nil),   // 15: kv.AntiEntropyBucketRequest
+	(*AntiEntropyKeyState)(nil),        // 16: kv.AntiEntropyKeyState
+	(*AntiEntropyBucketResponse)(nil),  // 17: kv.AntiEntropyBucketResponse
+	(*MembershipStatusRequest)(nil),    // 18: kv.MembershipStatusRequest
+	(*MembershipStatusResponse)(nil),   // 19: kv.MembershipStatusResponse
+	(*PrepareJoinPauseRequest)(nil),    // 20: kv.PrepareJoinPauseRequest
+	(*JoinDecisionResponse)(nil),       // 21: kv.JoinDecisionResponse
+	nil,                                // 22: kv.GetResponse.ContextEntry
+	nil,                                // 23: kv.VersionedRecord.ClockEntry
+	nil,                                // 24: kv.ResolveRequest.ContextEntry
 }
 var file_proto_kv_proto_depIdxs = []int32{
-	6,  // 0: kv.GetResponse.versions:type_name -> kv.VersionedRecord
-	20, // 1: kv.GetResponse.context:type_name -> kv.GetResponse.ContextEntry
-	21, // 2: kv.VersionedRecord.clock:type_name -> kv.VersionedRecord.ClockEntry
-	6,  // 3: kv.ReplicaRecordRequest.record:type_name -> kv.VersionedRecord
-	6,  // 4: kv.ReplicaRecordReadResponse.record:type_name -> kv.VersionedRecord
-	6,  // 5: kv.ReplicaRecordReadResponse.records:type_name -> kv.VersionedRecord
-	22, // 6: kv.ResolveRequest.context:type_name -> kv.ResolveRequest.ContextEntry
-	6,  // 7: kv.AntiEntropyKeyState.records:type_name -> kv.VersionedRecord
-	15, // 8: kv.AntiEntropyBucketResponse.keys:type_name -> kv.AntiEntropyKeyState
-	0,  // 9: kv.KeyValueStore.Put:input_type -> kv.PutRequest
-	2,  // 10: kv.KeyValueStore.Get:input_type -> kv.GetRequest
-	4,  // 11: kv.KeyValueStore.Delete:input_type -> kv.DeleteRequest
-	7,  // 12: kv.KeyValueStore.ApplyReplicaRecord:input_type -> kv.ReplicaRecordRequest
-	2,  // 13: kv.KeyValueStore.ReadReplicaRecord:input_type -> kv.GetRequest
-	10, // 14: kv.KeyValueStore.Resolve:input_type -> kv.ResolveRequest
-	12, // 15: kv.KeyValueStore.AntiEntropySummary:input_type -> kv.AntiEntropySummaryRequest
-	14, // 16: kv.KeyValueStore.AntiEntropyBucket:input_type -> kv.AntiEntropyBucketRequest
-	17, // 17: kv.KeyValueStore.GetMembershipStatus:input_type -> kv.MembershipStatusRequest
-	19, // 18: kv.KeyValueStore.PrepareJoinPause:input_type -> kv.PrepareJoinPauseRequest
-	19, // 19: kv.KeyValueStore.AbortJoinPause:input_type -> kv.PrepareJoinPauseRequest
-	1,  // 20: kv.KeyValueStore.Put:output_type -> kv.PutResponse
-	3,  // 21: kv.KeyValueStore.Get:output_type -> kv.GetResponse
-	5,  // 22: kv.KeyValueStore.Delete:output_type -> kv.DeleteResponse
-	8,  // 23: kv.KeyValueStore.ApplyReplicaRecord:output_type -> kv.ReplicaRecordResponse
-	9,  // 24: kv.KeyValueStore.ReadReplicaRecord:output_type -> kv.ReplicaRecordReadResponse
-	11, // 25: kv.KeyValueStore.Resolve:output_type -> kv.ResolveResponse
-	13, // 26: kv.KeyValueStore.AntiEntropySummary:output_type -> kv.AntiEntropySummaryResponse
-	16, // 27: kv.KeyValueStore.AntiEntropyBucket:output_type -> kv.AntiEntropyBucketResponse
-	18, // 28: kv.KeyValueStore.GetMembershipStatus:output_type -> kv.MembershipStatusResponse
-	18, // 29: kv.KeyValueStore.PrepareJoinPause:output_type -> kv.MembershipStatusResponse
-	18, // 30: kv.KeyValueStore.AbortJoinPause:output_type -> kv.MembershipStatusResponse
-	20, // [20:31] is the sub-list for method output_type
-	9,  // [9:20] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	7,  // 0: kv.GetResponse.versions:type_name -> kv.VersionedRecord
+	22, // 1: kv.GetResponse.context:type_name -> kv.GetResponse.ContextEntry
+	23, // 2: kv.VersionedRecord.clock:type_name -> kv.VersionedRecord.ClockEntry
+	7,  // 3: kv.ReplicaRecordRequest.record:type_name -> kv.VersionedRecord
+	7,  // 4: kv.ReplicaRecordReadResponse.record:type_name -> kv.VersionedRecord
+	7,  // 5: kv.ReplicaRecordReadResponse.records:type_name -> kv.VersionedRecord
+	24, // 6: kv.ResolveRequest.context:type_name -> kv.ResolveRequest.ContextEntry
+	7,  // 7: kv.AntiEntropyKeyState.records:type_name -> kv.VersionedRecord
+	16, // 8: kv.AntiEntropyBucketResponse.keys:type_name -> kv.AntiEntropyKeyState
+	0,  // 9: kv.JoinDecisionResponse.decision:type_name -> kv.JoinDecision
+	1,  // 10: kv.KeyValueStore.Put:input_type -> kv.PutRequest
+	3,  // 11: kv.KeyValueStore.Get:input_type -> kv.GetRequest
+	5,  // 12: kv.KeyValueStore.Delete:input_type -> kv.DeleteRequest
+	8,  // 13: kv.KeyValueStore.ApplyReplicaRecord:input_type -> kv.ReplicaRecordRequest
+	3,  // 14: kv.KeyValueStore.ReadReplicaRecord:input_type -> kv.GetRequest
+	11, // 15: kv.KeyValueStore.Resolve:input_type -> kv.ResolveRequest
+	13, // 16: kv.KeyValueStore.AntiEntropySummary:input_type -> kv.AntiEntropySummaryRequest
+	15, // 17: kv.KeyValueStore.AntiEntropyBucket:input_type -> kv.AntiEntropyBucketRequest
+	18, // 18: kv.KeyValueStore.GetMembershipStatus:input_type -> kv.MembershipStatusRequest
+	20, // 19: kv.KeyValueStore.PrepareJoinPause:input_type -> kv.PrepareJoinPauseRequest
+	20, // 20: kv.KeyValueStore.AbortJoinPause:input_type -> kv.PrepareJoinPauseRequest
+	20, // 21: kv.KeyValueStore.CommitJoinPause:input_type -> kv.PrepareJoinPauseRequest
+	20, // 22: kv.KeyValueStore.GetJoinDecision:input_type -> kv.PrepareJoinPauseRequest
+	2,  // 23: kv.KeyValueStore.Put:output_type -> kv.PutResponse
+	4,  // 24: kv.KeyValueStore.Get:output_type -> kv.GetResponse
+	6,  // 25: kv.KeyValueStore.Delete:output_type -> kv.DeleteResponse
+	9,  // 26: kv.KeyValueStore.ApplyReplicaRecord:output_type -> kv.ReplicaRecordResponse
+	10, // 27: kv.KeyValueStore.ReadReplicaRecord:output_type -> kv.ReplicaRecordReadResponse
+	12, // 28: kv.KeyValueStore.Resolve:output_type -> kv.ResolveResponse
+	14, // 29: kv.KeyValueStore.AntiEntropySummary:output_type -> kv.AntiEntropySummaryResponse
+	17, // 30: kv.KeyValueStore.AntiEntropyBucket:output_type -> kv.AntiEntropyBucketResponse
+	19, // 31: kv.KeyValueStore.GetMembershipStatus:output_type -> kv.MembershipStatusResponse
+	19, // 32: kv.KeyValueStore.PrepareJoinPause:output_type -> kv.MembershipStatusResponse
+	19, // 33: kv.KeyValueStore.AbortJoinPause:output_type -> kv.MembershipStatusResponse
+	19, // 34: kv.KeyValueStore.CommitJoinPause:output_type -> kv.MembershipStatusResponse
+	21, // 35: kv.KeyValueStore.GetJoinDecision:output_type -> kv.JoinDecisionResponse
+	23, // [23:36] is the sub-list for method output_type
+	10, // [10:23] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_proto_kv_proto_init() }
@@ -1339,13 +1502,14 @@ func file_proto_kv_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_kv_proto_rawDesc), len(file_proto_kv_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   23,
+			NumEnums:      1,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_proto_kv_proto_goTypes,
 		DependencyIndexes: file_proto_kv_proto_depIdxs,
+		EnumInfos:         file_proto_kv_proto_enumTypes,
 		MessageInfos:      file_proto_kv_proto_msgTypes,
 	}.Build()
 	File_proto_kv_proto = out.File

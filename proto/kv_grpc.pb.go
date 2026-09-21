@@ -30,6 +30,8 @@ const (
 	KeyValueStore_GetMembershipStatus_FullMethodName = "/kv.KeyValueStore/GetMembershipStatus"
 	KeyValueStore_PrepareJoinPause_FullMethodName    = "/kv.KeyValueStore/PrepareJoinPause"
 	KeyValueStore_AbortJoinPause_FullMethodName      = "/kv.KeyValueStore/AbortJoinPause"
+	KeyValueStore_CommitJoinPause_FullMethodName     = "/kv.KeyValueStore/CommitJoinPause"
+	KeyValueStore_GetJoinDecision_FullMethodName     = "/kv.KeyValueStore/GetJoinDecision"
 )
 
 // KeyValueStoreClient is the client API for KeyValueStore service.
@@ -47,6 +49,8 @@ type KeyValueStoreClient interface {
 	GetMembershipStatus(ctx context.Context, in *MembershipStatusRequest, opts ...grpc.CallOption) (*MembershipStatusResponse, error)
 	PrepareJoinPause(ctx context.Context, in *PrepareJoinPauseRequest, opts ...grpc.CallOption) (*MembershipStatusResponse, error)
 	AbortJoinPause(ctx context.Context, in *PrepareJoinPauseRequest, opts ...grpc.CallOption) (*MembershipStatusResponse, error)
+	CommitJoinPause(ctx context.Context, in *PrepareJoinPauseRequest, opts ...grpc.CallOption) (*MembershipStatusResponse, error)
+	GetJoinDecision(ctx context.Context, in *PrepareJoinPauseRequest, opts ...grpc.CallOption) (*JoinDecisionResponse, error)
 }
 
 type keyValueStoreClient struct {
@@ -167,6 +171,26 @@ func (c *keyValueStoreClient) AbortJoinPause(ctx context.Context, in *PrepareJoi
 	return out, nil
 }
 
+func (c *keyValueStoreClient) CommitJoinPause(ctx context.Context, in *PrepareJoinPauseRequest, opts ...grpc.CallOption) (*MembershipStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MembershipStatusResponse)
+	err := c.cc.Invoke(ctx, KeyValueStore_CommitJoinPause_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *keyValueStoreClient) GetJoinDecision(ctx context.Context, in *PrepareJoinPauseRequest, opts ...grpc.CallOption) (*JoinDecisionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(JoinDecisionResponse)
+	err := c.cc.Invoke(ctx, KeyValueStore_GetJoinDecision_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KeyValueStoreServer is the server API for KeyValueStore service.
 // All implementations must embed UnimplementedKeyValueStoreServer
 // for forward compatibility.
@@ -182,6 +206,8 @@ type KeyValueStoreServer interface {
 	GetMembershipStatus(context.Context, *MembershipStatusRequest) (*MembershipStatusResponse, error)
 	PrepareJoinPause(context.Context, *PrepareJoinPauseRequest) (*MembershipStatusResponse, error)
 	AbortJoinPause(context.Context, *PrepareJoinPauseRequest) (*MembershipStatusResponse, error)
+	CommitJoinPause(context.Context, *PrepareJoinPauseRequest) (*MembershipStatusResponse, error)
+	GetJoinDecision(context.Context, *PrepareJoinPauseRequest) (*JoinDecisionResponse, error)
 	mustEmbedUnimplementedKeyValueStoreServer()
 }
 
@@ -224,6 +250,12 @@ func (UnimplementedKeyValueStoreServer) PrepareJoinPause(context.Context, *Prepa
 }
 func (UnimplementedKeyValueStoreServer) AbortJoinPause(context.Context, *PrepareJoinPauseRequest) (*MembershipStatusResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AbortJoinPause not implemented")
+}
+func (UnimplementedKeyValueStoreServer) CommitJoinPause(context.Context, *PrepareJoinPauseRequest) (*MembershipStatusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CommitJoinPause not implemented")
+}
+func (UnimplementedKeyValueStoreServer) GetJoinDecision(context.Context, *PrepareJoinPauseRequest) (*JoinDecisionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetJoinDecision not implemented")
 }
 func (UnimplementedKeyValueStoreServer) mustEmbedUnimplementedKeyValueStoreServer() {}
 func (UnimplementedKeyValueStoreServer) testEmbeddedByValue()                       {}
@@ -444,6 +476,42 @@ func _KeyValueStore_AbortJoinPause_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KeyValueStore_CommitJoinPause_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PrepareJoinPauseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeyValueStoreServer).CommitJoinPause(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KeyValueStore_CommitJoinPause_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeyValueStoreServer).CommitJoinPause(ctx, req.(*PrepareJoinPauseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KeyValueStore_GetJoinDecision_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PrepareJoinPauseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeyValueStoreServer).GetJoinDecision(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KeyValueStore_GetJoinDecision_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeyValueStoreServer).GetJoinDecision(ctx, req.(*PrepareJoinPauseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KeyValueStore_ServiceDesc is the grpc.ServiceDesc for KeyValueStore service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -494,6 +562,14 @@ var KeyValueStore_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AbortJoinPause",
 			Handler:    _KeyValueStore_AbortJoinPause_Handler,
+		},
+		{
+			MethodName: "CommitJoinPause",
+			Handler:    _KeyValueStore_CommitJoinPause_Handler,
+		},
+		{
+			MethodName: "GetJoinDecision",
+			Handler:    _KeyValueStore_GetJoinDecision_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -2,6 +2,9 @@ package server
 
 import (
 	"context"
+	"errors"
+	"github.com/A-s-n55555/distributed-kv-store/internal/membership"
+	"os"
 
 	kvpb "github.com/A-s-n55555/distributed-kv-store/proto"
 	"google.golang.org/grpc/codes"
@@ -44,5 +47,30 @@ func (s *GRPCServer) GetMembershipStatus(
 		response.PendingEpoch = s.pendingJoin.Epoch
 		response.PendingDigest = append([]byte(nil), s.pendingJoin.Digest[:]...)
 	}
+
+	if s.joinPausePath != "" {
+		committed, err := membership.LoadJoinCommit(
+			s.joinPausePath, s.activeMembership,
+		)
+		switch {
+		case err == nil:
+			if !s.writesPaused || !s.replicasPaused ||
+				s.pendingJoin == nil ||
+				*s.pendingJoin != committed.Identity() {
+				return nil, status.Error(
+					codes.FailedPrecondition,
+					"committed join is not paused for its candidate",
+				)
+			}
+			response.JoinCommitted = true
+		case errors.Is(err, os.ErrNotExist):
+			// No activation decision has been recorded.
+		default:
+			return nil, status.Errorf(
+				codes.Internal, "inspect join commitment: %v", err,
+			)
+		}
+	}
+
 	return response, nil
 }

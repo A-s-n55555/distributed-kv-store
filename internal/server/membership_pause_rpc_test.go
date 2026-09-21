@@ -115,6 +115,13 @@ func TestPrepareJoinPauseRPCChecksAuthorizationAndIdentity(t *testing.T) {
 		t.Fatalf("abort with wrong candidate: got %v, want FailedPrecondition", err)
 	}
 
+	if _, err := client.AbortJoinPause(authorized, request); status.Code(err) != codes.FailedPrecondition {
+		t.Fatalf("abort without saved decision: got %v, want FailedPrecondition", err)
+	}
+	if err := s.recordJoinAbortDecision(active, candidate); err != nil {
+		t.Fatal(err)
+	}
+
 	aborted, err := client.AbortJoinPause(authorized, request)
 	if err != nil {
 		t.Fatal(err)

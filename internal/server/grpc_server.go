@@ -112,6 +112,19 @@ func (s *GRPCServer) Get(
 		)
 	}
 
+	s.writeMu.Lock()
+	defer s.writeMu.Unlock()
+
+	if err := ctx.Err(); err != nil {
+		return nil, status.FromContextError(err).Err()
+	}
+	if s.writesPaused {
+		return nil, status.Error(
+			codes.Unavailable,
+			"reads temporarily paused for membership transition",
+		)
+	}
+
 	versions, err := s.readSiblingQuorum(
 		ctx,
 		request.GetKey(),

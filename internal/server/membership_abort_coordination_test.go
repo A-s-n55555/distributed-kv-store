@@ -19,11 +19,11 @@ func TestAbortOldMembersAfterPartialAndCompletePause(t *testing.T) {
 	second := newRecordTestServer(t)
 	first.nodeID = "node-1"
 	second.nodeID = "node-2"
-
+	firstAddress := startMembershipTestRPC(t, first)
 	secondAddress := startMembershipTestRPC(t, second)
 	peer := ring.Node{ID: "node-2", Address: secondAddress}
 	clusterRing := ring.New(16)
-	clusterRing.AddNode(ring.Node{ID: "node-1", Address: "127.0.0.1:50051"})
+	clusterRing.AddNode(ring.Node{ID: "node-1", Address: firstAddress})
 	clusterRing.AddNode(peer)
 
 	current, err := membership.NewConfiguration(1, clusterRing, 2)
@@ -63,6 +63,20 @@ func TestAbortOldMembersAfterPartialAndCompletePause(t *testing.T) {
 	if _, err := first.pauseJoinPeer(ctx, peer, current, candidate); err != nil {
 		t.Fatal(err)
 	}
+
+	failedCtx, cancelFailed := context.WithCancel(ctx)
+	cancelFailed()
+	if err := first.abortOldMembersForJoin(failedCtx, candidate); status.Code(err) != codes.Unavailable {
+		t.Fatalf("interrupted remote abort: got %v, want Unavailable", err)
+	}
+
+	aborted, err := membership.JoinWasAborted(
+		first.joinPausePath, current, candidate,
+	)
+	if err != nil || !aborted {
+		t.Fatalf("abort decision was not saved: aborted=%v, err=%v", aborted, err)
+	}
+
 	if err := first.abortOldMembersForJoin(ctx, candidate); err != nil {
 		t.Fatalf("abort partial pause: %v", err)
 	}
@@ -118,5 +132,35 @@ func TestAbortOldMembersAfterPartialAndCompletePause(t *testing.T) {
 		) {
 			t.Fatalf("%s did not resume: %v", service.nodeID, response)
 		}
+	}
+	// A local commitment must prevent the coordinator from aborting
+	// the still-uncommitted remote member.
+	committedCandidate, err := membership.PrepareJoin(current, ring.Node{
+		ID: "node-5", Address: "127.0.0.1:50055",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := first.pauseOldMembersForJoin(ctx, committedCandidate); err != nil {
+		t.Fatal(err)
+	}
+	if err := first.CommitForJoin(committedCandidate); err != nil {
+		t.Fatal(err)
+	}
+	if err := first.abortOldMembersForJoin(ctx, committedCandidate); status.Code(err) != codes.FailedPrecondition {
+		t.Fatalf("abort after local commit: got %v, want FailedPrecondition", err)
+	}
+
+	remoteStatus, err := second.GetMembershipStatus(
+		ctx, &kvpb.MembershipStatusRequest{},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !confirmsJoinPause(
+		remoteStatus, second.nodeID,
+		current.Identity(), committedCandidate.Identity(),
+	) {
+		t.Fatalf("abort changed remote pause: %v", remoteStatus)
 	}
 }

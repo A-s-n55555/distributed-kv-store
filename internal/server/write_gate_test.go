@@ -33,11 +33,19 @@ func TestPauseCoordinatorWrites(t *testing.T) {
 	if _, err := s.Delete(ctx, &kvpb.DeleteRequest{Key: 1}); status.Code(err) != codes.Unavailable {
 		t.Fatalf("paused Delete: got %v, want Unavailable", err)
 	}
-	if _, err := s.Get(ctx, &kvpb.GetRequest{Key: 1}); err != nil {
-		t.Fatalf("Get during pause: %v", err)
+	if _, err := s.Get(ctx, &kvpb.GetRequest{Key: 1}); status.Code(err) != codes.Unavailable {
+		t.Fatalf("paused Get: got %v, want Unavailable", err)
 	}
 
 	s.resumeCoordinatorWrites()
+
+	response, err := s.Get(ctx, &kvpb.GetRequest{Key: 1})
+	if err != nil {
+		t.Fatalf("Get after resume: %v", err)
+	}
+	if !response.GetFound() || response.GetValue() != "before" {
+		t.Fatalf("unexpected value after resume: %v", response)
+	}
 
 	if _, err := s.Put(ctx, &kvpb.PutRequest{Key: 2, Value: "after"}); err != nil {
 		t.Fatalf("Put after resume: %v", err)

@@ -187,6 +187,17 @@ func (s *GRPCServer) abortForJoinLocked(candidate membership.Configuration) erro
 		return status.Error(codes.FailedPrecondition, "join pause path is not configured")
 	}
 
+	if _, err := membership.LoadJoinCommit(
+		s.joinPausePath, current,
+	); err == nil {
+		return status.Error(
+			codes.FailedPrecondition,
+			"committed join cannot be aborted",
+		)
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return status.Errorf(codes.Internal, "inspect join commitment: %v", err)
+	}
+
 	actual, err := membership.NewConfiguration(
 		current.Identity().Epoch, s.ring, s.replicationFactor,
 	)

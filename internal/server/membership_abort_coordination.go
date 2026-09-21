@@ -3,6 +3,8 @@ package server
 import (
 	"bytes"
 	"context"
+	"errors"
+	"os"
 
 	"github.com/A-s-n55555/distributed-kv-store/internal/membership"
 	kvpb "github.com/A-s-n55555/distributed-kv-store/proto"
@@ -24,6 +26,50 @@ func confirmsJoinAbort(
 		len(response.GetPendingDigest()) == 0
 }
 
+// recordJoinAbortDecision saves the abort choice without opening either gate.
+// The coordinator can retry remote aborts after a failure or restart.
+func (s *GRPCServer) recordJoinAbortDecision(
+	current, candidate membership.Configuration,
+) error {
+	s.writeMu.Lock()
+	defer s.writeMu.Unlock()
+	s.replicaApplyMu.Lock()
+	defer s.replicaApplyMu.Unlock()
+
+	if s.activeMembership.Identity() != current.Identity() {
+		return status.Error(codes.FailedPrecondition, "active membership changed")
+	}
+	if s.joinPausePath == "" {
+		return status.Error(codes.FailedPrecondition, "join pause path is not configured")
+	}
+
+	pausedForCandidate := s.writesPaused && s.replicasPaused &&
+		s.pendingJoin != nil && *s.pendingJoin == candidate.Identity()
+	if !pausedForCandidate &&
+		(s.writesPaused || s.replicasPaused || s.pendingJoin != nil) {
+		return status.Error(codes.FailedPrecondition, "node is paused for another operation")
+	}
+
+	if err := s.requireJoinCoordinator(current); err != nil {
+		return err
+	}
+
+	if _, err := membership.LoadJoinCommit(
+		s.joinPausePath, current,
+	); err == nil {
+		return status.Error(codes.FailedPrecondition, "committed join cannot be aborted")
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return status.Errorf(codes.Internal, "inspect join commitment: %v", err)
+	}
+
+	if err := membership.RecordJoinAbort(
+		s.joinPausePath, current, candidate,
+	); err != nil {
+		return status.Errorf(codes.Internal, "persist join abort decision: %v", err)
+	}
+	return nil
+}
+
 // abortOldMembersForJoin tries every remote old member, then resumes local
 // writes only when all remote members have confirmed the old active state.
 func (s *GRPCServer) abortOldMembersForJoin(
@@ -34,6 +80,10 @@ func (s *GRPCServer) abortOldMembersForJoin(
 	current := s.activeMembership
 	s.writeMu.Unlock()
 
+	if err := s.requireJoinCoordinator(current); err != nil {
+		return err
+	}
+
 	if _, err := membership.ValidateJoinCandidate(current, candidate); err != nil {
 		return status.Errorf(codes.FailedPrecondition, "invalid join candidate: %v", err)
 	}
@@ -43,6 +93,10 @@ func (s *GRPCServer) abortOldMembersForJoin(
 	)
 	if err != nil || actual.Identity() != current.Identity() {
 		return status.Error(codes.FailedPrecondition, "server ring differs from active membership")
+	}
+
+	if err := s.recordJoinAbortDecision(current, candidate); err != nil {
+		return err
 	}
 
 	activeID := current.Identity()

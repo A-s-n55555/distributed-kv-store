@@ -131,3 +131,64 @@ func TestJoinPauseIsRestoredBeforeServing(t *testing.T) {
 		t.Fatalf("replica apply after durable resume: %v", err)
 	}
 }
+
+func TestCommittedJoinStaysPausedAfterRestart(t *testing.T) {
+	clusterRing := ring.New(16)
+	clusterRing.AddNode(ring.Node{ID: "node-1", Address: "localhost:50051"})
+	clusterRing.AddNode(ring.Node{ID: "node-2", Address: "localhost:50052"})
+
+	active, err := membership.NewConfiguration(1, clusterRing, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	candidate, err := membership.PrepareJoin(active, ring.Node{
+		ID: "node-3", Address: "localhost:50053",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pausePath := filepath.Join(t.TempDir(), "membership-pause.json")
+
+	newNode := func() *GRPCServer {
+		t.Helper()
+		s := newRecordTestServer(t)
+		s.nodeID = "node-1"
+		s.ring = clusterRing
+		s.replicationFactor = 2
+		if err := s.SetActiveMembership(active); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.ConfigureJoinPause(pausePath); err != nil {
+			t.Fatal(err)
+		}
+		return s
+	}
+
+	first := newNode()
+	if err := first.PauseForJoin(candidate); err != nil {
+		t.Fatal(err)
+	}
+	if err := first.CommitForJoin(candidate); err != nil {
+		t.Fatal(err)
+	}
+	if err := first.CommitForJoin(candidate); err != nil {
+		t.Fatalf("retry commit: %v", err)
+	}
+
+	restarted := newNode()
+	if err := restarted.AbortForJoin(candidate); status.Code(err) != codes.FailedPrecondition {
+		t.Fatalf("abort after restart: got %v, want FailedPrecondition", err)
+	}
+	response, err := restarted.GetMembershipStatus(
+		context.Background(), &kvpb.MembershipStatusRequest{},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !response.GetWritesPaused() {
+		t.Fatal("committed join lost its pause after restart")
+	}
+	if !response.GetJoinCommitted() {
+		t.Fatal("restart lost the join commitment")
+	}
+}

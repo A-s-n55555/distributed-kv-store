@@ -29,7 +29,14 @@ service KeyValueStore {
 
   rpc AbortJoinPause(PrepareJoinPauseRequest)
     returns (MembershipStatusResponse);
+
+  rpc CommitJoinPause(PrepareJoinPauseRequest)
+    returns (MembershipStatusResponse);
+
+  rpc GetJoinDecision(PrepareJoinPauseRequest)
+    returns (JoinDecisionResponse);
 }
+
 
 message PutRequest {
   int64 key = 1;
@@ -137,6 +144,7 @@ message MembershipStatusResponse {
   bool writes_paused = 4;
   uint64 pending_epoch = 5;
   bytes pending_digest = 6;
+  bool join_committed = 7;
 }
 
 message PrepareJoinPauseRequest {
@@ -147,3 +155,19 @@ message PrepareJoinPauseRequest {
   string joining_node_id = 5;
   string joining_node_address = 6;
 }
+
+enum JoinDecision {
+  JOIN_DECISION_UNDECIDED = 0;
+  JOIN_DECISION_COMMIT = 1;
+  JOIN_DECISION_ABORT = 2;
+}
+
+message JoinDecisionResponse {
+  string coordinator_node_id = 1;
+  uint64 active_epoch = 2;
+  bytes active_digest = 3;
+  uint64 candidate_epoch = 4;
+  bytes candidate_digest = 5;
+  JoinDecision decision = 6;
+}
+

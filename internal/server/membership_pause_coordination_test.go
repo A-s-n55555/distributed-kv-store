@@ -2,6 +2,8 @@ package server
 
 import (
 	"context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -72,6 +74,10 @@ func TestPauseOldMembersForJoin(t *testing.T) {
 			response, service.nodeID, current.Identity(), candidate.Identity(),
 		) {
 			t.Fatalf("%s has incorrect pause: %v", service.nodeID, response)
+		}
+		_, err = service.Get(ctx, &kvpb.GetRequest{Key: 99})
+		if status.Code(err) != codes.Unavailable {
+			t.Fatalf("%s allowed a client read while paused: %v", service.nodeID, err)
 		}
 	}
 }
