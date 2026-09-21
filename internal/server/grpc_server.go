@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/A-s-n55555/distributed-kv-store/internal/handoff"
+	"github.com/A-s-n55555/distributed-kv-store/internal/membership"
 	"github.com/A-s-n55555/distributed-kv-store/internal/ring"
 	"github.com/A-s-n55555/distributed-kv-store/internal/store"
 	kvpb "github.com/A-s-n55555/distributed-kv-store/proto"
@@ -18,16 +19,23 @@ type GRPCServer struct {
 
 	writeMu sync.Mutex
 
-	store             *store.Map
-	ring              *ring.Ring
-	nodeID            string
-	replicationFactor int
-	readQuorum        int
-	writeQuorum       int
-	hintQueue         *handoff.Queue
-	antiEntropyMu     sync.Mutex
-	antiEntropyCancel context.CancelFunc
-	antiEntropyDone   chan struct{}
+	store                  *store.Map
+	ring                   *ring.Ring
+	nodeID                 string
+	replicationFactor      int
+	readQuorum             int
+	writeQuorum            int
+	hintQueue              *handoff.Queue
+	antiEntropyMu          sync.Mutex
+	antiEntropyCancel      context.CancelFunc
+	antiEntropyDone        chan struct{}
+	writesPaused           bool // guarded by writeMu
+	replicaApplyMu         sync.Mutex
+	replicasPaused         bool                     // guarded by replicaApplyMu
+	activeMembership       membership.Configuration // guarded by writeMu
+	membershipControlToken string                   // guarded by writeMu
+	pendingJoin            *membership.Identity     // guarded by writeMu
+	joinPausePath          string                   // configured before the gRPC service starts
 }
 
 func New(

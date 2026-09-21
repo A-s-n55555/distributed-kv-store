@@ -48,6 +48,12 @@ func (s *GRPCServer) ApplyReplicaRecord(
 			"a tombstone must have an empty value",
 		)
 	}
+	s.replicaApplyMu.Lock()
+	defer s.replicaApplyMu.Unlock()
+
+	if s.replicasPaused {
+		return nil, status.Error(codes.Unavailable, "replica writes temporarily paused for membership transition")
+	}
 
 	err := s.store.ApplyRecord(
 		request.GetKey(),

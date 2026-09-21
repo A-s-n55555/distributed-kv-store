@@ -947,6 +947,210 @@ func (x *AntiEntropyBucketResponse) GetKeys() []*AntiEntropyKeyState {
 	return nil
 }
 
+type MembershipStatusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MembershipStatusRequest) Reset() {
+	*x = MembershipStatusRequest{}
+	mi := &file_proto_kv_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MembershipStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MembershipStatusRequest) ProtoMessage() {}
+
+func (x *MembershipStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_kv_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MembershipStatusRequest.ProtoReflect.Descriptor instead.
+func (*MembershipStatusRequest) Descriptor() ([]byte, []int) {
+	return file_proto_kv_proto_rawDescGZIP(), []int{17}
+}
+
+type MembershipStatusResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	ActiveEpoch   uint64                 `protobuf:"varint,2,opt,name=active_epoch,json=activeEpoch,proto3" json:"active_epoch,omitempty"`
+	ActiveDigest  []byte                 `protobuf:"bytes,3,opt,name=active_digest,json=activeDigest,proto3" json:"active_digest,omitempty"`
+	WritesPaused  bool                   `protobuf:"varint,4,opt,name=writes_paused,json=writesPaused,proto3" json:"writes_paused,omitempty"`
+	PendingEpoch  uint64                 `protobuf:"varint,5,opt,name=pending_epoch,json=pendingEpoch,proto3" json:"pending_epoch,omitempty"`
+	PendingDigest []byte                 `protobuf:"bytes,6,opt,name=pending_digest,json=pendingDigest,proto3" json:"pending_digest,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MembershipStatusResponse) Reset() {
+	*x = MembershipStatusResponse{}
+	mi := &file_proto_kv_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MembershipStatusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MembershipStatusResponse) ProtoMessage() {}
+
+func (x *MembershipStatusResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_kv_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MembershipStatusResponse.ProtoReflect.Descriptor instead.
+func (*MembershipStatusResponse) Descriptor() ([]byte, []int) {
+	return file_proto_kv_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *MembershipStatusResponse) GetNodeId() string {
+	if x != nil {
+		return x.NodeId
+	}
+	return ""
+}
+
+func (x *MembershipStatusResponse) GetActiveEpoch() uint64 {
+	if x != nil {
+		return x.ActiveEpoch
+	}
+	return 0
+}
+
+func (x *MembershipStatusResponse) GetActiveDigest() []byte {
+	if x != nil {
+		return x.ActiveDigest
+	}
+	return nil
+}
+
+func (x *MembershipStatusResponse) GetWritesPaused() bool {
+	if x != nil {
+		return x.WritesPaused
+	}
+	return false
+}
+
+func (x *MembershipStatusResponse) GetPendingEpoch() uint64 {
+	if x != nil {
+		return x.PendingEpoch
+	}
+	return 0
+}
+
+func (x *MembershipStatusResponse) GetPendingDigest() []byte {
+	if x != nil {
+		return x.PendingDigest
+	}
+	return nil
+}
+
+type PrepareJoinPauseRequest struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	ActiveEpoch        uint64                 `protobuf:"varint,1,opt,name=active_epoch,json=activeEpoch,proto3" json:"active_epoch,omitempty"`
+	ActiveDigest       []byte                 `protobuf:"bytes,2,opt,name=active_digest,json=activeDigest,proto3" json:"active_digest,omitempty"`
+	CandidateEpoch     uint64                 `protobuf:"varint,3,opt,name=candidate_epoch,json=candidateEpoch,proto3" json:"candidate_epoch,omitempty"`
+	CandidateDigest    []byte                 `protobuf:"bytes,4,opt,name=candidate_digest,json=candidateDigest,proto3" json:"candidate_digest,omitempty"`
+	JoiningNodeId      string                 `protobuf:"bytes,5,opt,name=joining_node_id,json=joiningNodeId,proto3" json:"joining_node_id,omitempty"`
+	JoiningNodeAddress string                 `protobuf:"bytes,6,opt,name=joining_node_address,json=joiningNodeAddress,proto3" json:"joining_node_address,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *PrepareJoinPauseRequest) Reset() {
+	*x = PrepareJoinPauseRequest{}
+	mi := &file_proto_kv_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PrepareJoinPauseRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PrepareJoinPauseRequest) ProtoMessage() {}
+
+func (x *PrepareJoinPauseRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_kv_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PrepareJoinPauseRequest.ProtoReflect.Descriptor instead.
+func (*PrepareJoinPauseRequest) Descriptor() ([]byte, []int) {
+	return file_proto_kv_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *PrepareJoinPauseRequest) GetActiveEpoch() uint64 {
+	if x != nil {
+		return x.ActiveEpoch
+	}
+	return 0
+}
+
+func (x *PrepareJoinPauseRequest) GetActiveDigest() []byte {
+	if x != nil {
+		return x.ActiveDigest
+	}
+	return nil
+}
+
+func (x *PrepareJoinPauseRequest) GetCandidateEpoch() uint64 {
+	if x != nil {
+		return x.CandidateEpoch
+	}
+	return 0
+}
+
+func (x *PrepareJoinPauseRequest) GetCandidateDigest() []byte {
+	if x != nil {
+		return x.CandidateDigest
+	}
+	return nil
+}
+
+func (x *PrepareJoinPauseRequest) GetJoiningNodeId() string {
+	if x != nil {
+		return x.JoiningNodeId
+	}
+	return ""
+}
+
+func (x *PrepareJoinPauseRequest) GetJoiningNodeAddress() string {
+	if x != nil {
+		return x.JoiningNodeAddress
+	}
+	return ""
+}
+
 var File_proto_kv_proto protoreflect.FileDescriptor
 
 const file_proto_kv_proto_rawDesc = "" +
@@ -1019,7 +1223,22 @@ const file_proto_kv_proto_rawDesc = "" +
 	"\x11responder_node_id\x18\x01 \x01(\tR\x0fresponderNodeId\x121\n" +
 	"\x14configuration_digest\x18\x02 \x01(\fR\x13configurationDigest\x12\x16\n" +
 	"\x06bucket\x18\x03 \x01(\x05R\x06bucket\x12+\n" +
-	"\x04keys\x18\x04 \x03(\v2\x17.kv.AntiEntropyKeyStateR\x04keys2\xfa\x03\n" +
+	"\x04keys\x18\x04 \x03(\v2\x17.kv.AntiEntropyKeyStateR\x04keys\"\x19\n" +
+	"\x17MembershipStatusRequest\"\xec\x01\n" +
+	"\x18MembershipStatusResponse\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12!\n" +
+	"\factive_epoch\x18\x02 \x01(\x04R\vactiveEpoch\x12#\n" +
+	"\ractive_digest\x18\x03 \x01(\fR\factiveDigest\x12#\n" +
+	"\rwrites_paused\x18\x04 \x01(\bR\fwritesPaused\x12#\n" +
+	"\rpending_epoch\x18\x05 \x01(\x04R\fpendingEpoch\x12%\n" +
+	"\x0epending_digest\x18\x06 \x01(\fR\rpendingDigest\"\x8f\x02\n" +
+	"\x17PrepareJoinPauseRequest\x12!\n" +
+	"\factive_epoch\x18\x01 \x01(\x04R\vactiveEpoch\x12#\n" +
+	"\ractive_digest\x18\x02 \x01(\fR\factiveDigest\x12'\n" +
+	"\x0fcandidate_epoch\x18\x03 \x01(\x04R\x0ecandidateEpoch\x12)\n" +
+	"\x10candidate_digest\x18\x04 \x01(\fR\x0fcandidateDigest\x12&\n" +
+	"\x0fjoining_node_id\x18\x05 \x01(\tR\rjoiningNodeId\x120\n" +
+	"\x14joining_node_address\x18\x06 \x01(\tR\x12joiningNodeAddress2\xe8\x05\n" +
 	"\rKeyValueStore\x12&\n" +
 	"\x03Put\x12\x0e.kv.PutRequest\x1a\x0f.kv.PutResponse\x12&\n" +
 	"\x03Get\x12\x0e.kv.GetRequest\x1a\x0f.kv.GetResponse\x12/\n" +
@@ -1028,7 +1247,10 @@ const file_proto_kv_proto_rawDesc = "" +
 	"\x11ReadReplicaRecord\x12\x0e.kv.GetRequest\x1a\x1d.kv.ReplicaRecordReadResponse\x122\n" +
 	"\aResolve\x12\x12.kv.ResolveRequest\x1a\x13.kv.ResolveResponse\x12S\n" +
 	"\x12AntiEntropySummary\x12\x1d.kv.AntiEntropySummaryRequest\x1a\x1e.kv.AntiEntropySummaryResponse\x12P\n" +
-	"\x11AntiEntropyBucket\x12\x1c.kv.AntiEntropyBucketRequest\x1a\x1d.kv.AntiEntropyBucketResponseB7Z5github.com/A-s-n55555/distributed-kv-store/proto;kvpbb\x06proto3"
+	"\x11AntiEntropyBucket\x12\x1c.kv.AntiEntropyBucketRequest\x1a\x1d.kv.AntiEntropyBucketResponse\x12P\n" +
+	"\x13GetMembershipStatus\x12\x1b.kv.MembershipStatusRequest\x1a\x1c.kv.MembershipStatusResponse\x12M\n" +
+	"\x10PrepareJoinPause\x12\x1b.kv.PrepareJoinPauseRequest\x1a\x1c.kv.MembershipStatusResponse\x12K\n" +
+	"\x0eAbortJoinPause\x12\x1b.kv.PrepareJoinPauseRequest\x1a\x1c.kv.MembershipStatusResponseB7Z5github.com/A-s-n55555/distributed-kv-store/proto;kvpbb\x06proto3"
 
 var (
 	file_proto_kv_proto_rawDescOnce sync.Once
@@ -1042,7 +1264,7 @@ func file_proto_kv_proto_rawDescGZIP() []byte {
 	return file_proto_kv_proto_rawDescData
 }
 
-var file_proto_kv_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_proto_kv_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_proto_kv_proto_goTypes = []any{
 	(*PutRequest)(nil),                 // 0: kv.PutRequest
 	(*PutResponse)(nil),                // 1: kv.PutResponse
@@ -1061,18 +1283,21 @@ var file_proto_kv_proto_goTypes = []any{
 	(*AntiEntropyBucketRequest)(nil),   // 14: kv.AntiEntropyBucketRequest
 	(*AntiEntropyKeyState)(nil),        // 15: kv.AntiEntropyKeyState
 	(*AntiEntropyBucketResponse)(nil),  // 16: kv.AntiEntropyBucketResponse
-	nil,                                // 17: kv.GetResponse.ContextEntry
-	nil,                                // 18: kv.VersionedRecord.ClockEntry
-	nil,                                // 19: kv.ResolveRequest.ContextEntry
+	(*MembershipStatusRequest)(nil),    // 17: kv.MembershipStatusRequest
+	(*MembershipStatusResponse)(nil),   // 18: kv.MembershipStatusResponse
+	(*PrepareJoinPauseRequest)(nil),    // 19: kv.PrepareJoinPauseRequest
+	nil,                                // 20: kv.GetResponse.ContextEntry
+	nil,                                // 21: kv.VersionedRecord.ClockEntry
+	nil,                                // 22: kv.ResolveRequest.ContextEntry
 }
 var file_proto_kv_proto_depIdxs = []int32{
 	6,  // 0: kv.GetResponse.versions:type_name -> kv.VersionedRecord
-	17, // 1: kv.GetResponse.context:type_name -> kv.GetResponse.ContextEntry
-	18, // 2: kv.VersionedRecord.clock:type_name -> kv.VersionedRecord.ClockEntry
+	20, // 1: kv.GetResponse.context:type_name -> kv.GetResponse.ContextEntry
+	21, // 2: kv.VersionedRecord.clock:type_name -> kv.VersionedRecord.ClockEntry
 	6,  // 3: kv.ReplicaRecordRequest.record:type_name -> kv.VersionedRecord
 	6,  // 4: kv.ReplicaRecordReadResponse.record:type_name -> kv.VersionedRecord
 	6,  // 5: kv.ReplicaRecordReadResponse.records:type_name -> kv.VersionedRecord
-	19, // 6: kv.ResolveRequest.context:type_name -> kv.ResolveRequest.ContextEntry
+	22, // 6: kv.ResolveRequest.context:type_name -> kv.ResolveRequest.ContextEntry
 	6,  // 7: kv.AntiEntropyKeyState.records:type_name -> kv.VersionedRecord
 	15, // 8: kv.AntiEntropyBucketResponse.keys:type_name -> kv.AntiEntropyKeyState
 	0,  // 9: kv.KeyValueStore.Put:input_type -> kv.PutRequest
@@ -1083,16 +1308,22 @@ var file_proto_kv_proto_depIdxs = []int32{
 	10, // 14: kv.KeyValueStore.Resolve:input_type -> kv.ResolveRequest
 	12, // 15: kv.KeyValueStore.AntiEntropySummary:input_type -> kv.AntiEntropySummaryRequest
 	14, // 16: kv.KeyValueStore.AntiEntropyBucket:input_type -> kv.AntiEntropyBucketRequest
-	1,  // 17: kv.KeyValueStore.Put:output_type -> kv.PutResponse
-	3,  // 18: kv.KeyValueStore.Get:output_type -> kv.GetResponse
-	5,  // 19: kv.KeyValueStore.Delete:output_type -> kv.DeleteResponse
-	8,  // 20: kv.KeyValueStore.ApplyReplicaRecord:output_type -> kv.ReplicaRecordResponse
-	9,  // 21: kv.KeyValueStore.ReadReplicaRecord:output_type -> kv.ReplicaRecordReadResponse
-	11, // 22: kv.KeyValueStore.Resolve:output_type -> kv.ResolveResponse
-	13, // 23: kv.KeyValueStore.AntiEntropySummary:output_type -> kv.AntiEntropySummaryResponse
-	16, // 24: kv.KeyValueStore.AntiEntropyBucket:output_type -> kv.AntiEntropyBucketResponse
-	17, // [17:25] is the sub-list for method output_type
-	9,  // [9:17] is the sub-list for method input_type
+	17, // 17: kv.KeyValueStore.GetMembershipStatus:input_type -> kv.MembershipStatusRequest
+	19, // 18: kv.KeyValueStore.PrepareJoinPause:input_type -> kv.PrepareJoinPauseRequest
+	19, // 19: kv.KeyValueStore.AbortJoinPause:input_type -> kv.PrepareJoinPauseRequest
+	1,  // 20: kv.KeyValueStore.Put:output_type -> kv.PutResponse
+	3,  // 21: kv.KeyValueStore.Get:output_type -> kv.GetResponse
+	5,  // 22: kv.KeyValueStore.Delete:output_type -> kv.DeleteResponse
+	8,  // 23: kv.KeyValueStore.ApplyReplicaRecord:output_type -> kv.ReplicaRecordResponse
+	9,  // 24: kv.KeyValueStore.ReadReplicaRecord:output_type -> kv.ReplicaRecordReadResponse
+	11, // 25: kv.KeyValueStore.Resolve:output_type -> kv.ResolveResponse
+	13, // 26: kv.KeyValueStore.AntiEntropySummary:output_type -> kv.AntiEntropySummaryResponse
+	16, // 27: kv.KeyValueStore.AntiEntropyBucket:output_type -> kv.AntiEntropyBucketResponse
+	18, // 28: kv.KeyValueStore.GetMembershipStatus:output_type -> kv.MembershipStatusResponse
+	18, // 29: kv.KeyValueStore.PrepareJoinPause:output_type -> kv.MembershipStatusResponse
+	18, // 30: kv.KeyValueStore.AbortJoinPause:output_type -> kv.MembershipStatusResponse
+	20, // [20:31] is the sub-list for method output_type
+	9,  // [9:20] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name
@@ -1109,7 +1340,7 @@ func file_proto_kv_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_kv_proto_rawDesc), len(file_proto_kv_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   20,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

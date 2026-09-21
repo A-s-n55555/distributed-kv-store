@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/A-s-n55555/distributed-kv-store/internal/handoff"
+	"github.com/A-s-n55555/distributed-kv-store/internal/membership"
 	"github.com/A-s-n55555/distributed-kv-store/internal/ring"
 	"github.com/A-s-n55555/distributed-kv-store/internal/server"
 	"github.com/A-s-n55555/distributed-kv-store/internal/store"
@@ -51,6 +52,16 @@ func main() {
 		"anti-entropy-interval",
 		10*time.Second,
 		"Interval between anti-entropy synchronization rounds",
+	)
+	bootstrapMembership := flag.Bool(
+		"bootstrap-membership",
+		false,
+		"Create this node's active membership file on first setup",
+	)
+	membershipTokenFile := flag.String(
+		"membership-token-file",
+		"",
+		"File containing a shared 64-character hex token for local membership control",
 	)
 	flag.Parse()
 
@@ -99,6 +110,31 @@ func main() {
 	}
 	defer writeAheadLog.Close()
 
+	activePath := filepath.Join(*dataDir, *nodeID, "membership-active.json")
+	active, err := membership.LoadOrBootstrapActive(
+		activePath,
+		clusterRing,
+		*replicationFactor,
+		*bootstrapMembership,
+	)
+	if err != nil {
+		log.Fatalf("active membership: %v", err)
+	}
+
+	localMember := false
+	for _, node := range active.Nodes() {
+		if node.ID == *nodeID {
+			localMember = true
+			break
+		}
+	}
+	if !localMember {
+		log.Fatalf("node %s is absent from active membership", *nodeID)
+	}
+
+	log.Printf("active membership epoch=%d; file=%s",
+		active.Identity().Epoch, activePath)
+
 	kvStore, err := store.NewMap(writeAheadLog)
 	if err != nil {
 		log.Fatalf("failed to recover store: %v", err)
@@ -140,6 +176,33 @@ func main() {
 		*writeQuorum,
 		hintQueue,
 	)
+	if err := kvService.SetActiveMembership(active); err != nil {
+		log.Fatalf("configure server membership: %v", err)
+	}
+	pausePath := filepath.Join(*dataDir, *nodeID, "membership-pause.json")
+	if err := kvService.ConfigureJoinPause(pausePath); err != nil {
+		log.Fatalf("restore join pause: %v", err)
+	}
+
+	if *membershipTokenFile != "" {
+		info, err := os.Stat(*membershipTokenFile)
+		if err != nil {
+			log.Fatalf("membership token file: %v", err)
+		}
+		if info.Mode().Perm()&0077 != 0 {
+			log.Fatal("membership token file must not be accessible by group or others")
+		}
+
+		data, err := os.ReadFile(*membershipTokenFile)
+		if err != nil {
+			log.Fatalf("read membership token: %v", err)
+		}
+		if err := kvService.ConfigureMembershipControlToken(
+			strings.TrimSpace(string(data)),
+		); err != nil {
+			log.Fatalf("configure membership control: %v", err)
+		}
+	}
 
 	kvpb.RegisterKeyValueStoreServer(
 		grpcServer,

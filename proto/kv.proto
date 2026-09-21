@@ -20,6 +20,15 @@ service KeyValueStore {
 
   rpc AntiEntropyBucket(AntiEntropyBucketRequest)
       returns (AntiEntropyBucketResponse);
+
+  rpc GetMembershipStatus(MembershipStatusRequest)
+    returns (MembershipStatusResponse);
+
+  rpc PrepareJoinPause(PrepareJoinPauseRequest)
+    returns (MembershipStatusResponse);
+
+  rpc AbortJoinPause(PrepareJoinPauseRequest)
+    returns (MembershipStatusResponse);
 }
 
 message PutRequest {
@@ -117,4 +126,24 @@ message AntiEntropyBucketResponse {
   bytes configuration_digest = 2;
   int32 bucket = 3;
   repeated AntiEntropyKeyState keys = 4;
+}
+
+message MembershipStatusRequest {}
+
+message MembershipStatusResponse {
+  string node_id = 1;
+  uint64 active_epoch = 2;
+  bytes active_digest = 3;
+  bool writes_paused = 4;
+  uint64 pending_epoch = 5;
+  bytes pending_digest = 6;
+}
+
+message PrepareJoinPauseRequest {
+  uint64 active_epoch = 1;
+  bytes active_digest = 2;
+  uint64 candidate_epoch = 3;
+  bytes candidate_digest = 4;
+  string joining_node_id = 5;
+  string joining_node_address = 6;
 }

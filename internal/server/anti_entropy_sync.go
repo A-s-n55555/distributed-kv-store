@@ -120,6 +120,12 @@ func (s *GRPCServer) applyAntiEntropyBucket(
 			"anti-entropy peer returned a nil bucket response",
 		)
 	}
+	s.replicaApplyMu.Lock()
+	defer s.replicaApplyMu.Unlock()
+
+	if s.replicasPaused {
+		return 0, status.Error(codes.Unavailable, "replica writes temporarily paused for membership transition")
+	}
 
 	seenKeys := make(map[int64]struct{})
 	applied := 0

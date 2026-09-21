@@ -35,6 +35,9 @@ func (s *GRPCServer) coordinateWrite(
 	if err := ctx.Err(); err != nil {
 		return status.FromContextError(err).Err()
 	}
+	if s.writesPaused {
+		return status.Error(codes.Unavailable, "writes temporarily paused for membership transition")
+	}
 
 	if deleted && value != "" {
 		return status.Error(
