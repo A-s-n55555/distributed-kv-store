@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"time"
@@ -58,7 +59,7 @@ func (s *GRPCServer) fetchMembershipStatus(
 				"invalid pending identity from %s", peer.ID,
 			)
 		}
-	} else if !response.GetWritesPaused() ||
+	} else if (!response.GetWritesPaused() && !response.GetClientsReleased()) ||
 		len(response.GetPendingDigest()) != sha256.Size {
 		return nil, status.Errorf(
 			codes.FailedPrecondition,
@@ -66,5 +67,19 @@ func (s *GRPCServer) fetchMembershipStatus(
 		)
 	}
 
+	if response.GetClientsReleased() {
+		if response.GetWritesPaused() ||
+			!response.GetReplicasReady() ||
+			response.GetPendingEpoch() != response.GetActiveEpoch() ||
+			!bytes.Equal(
+				response.GetPendingDigest(),
+				response.GetActiveDigest(),
+			) {
+			return nil, status.Errorf(
+				codes.FailedPrecondition,
+				"invalid released membership status from %s", peer.ID,
+			)
+		}
+	}
 	return response, nil
 }

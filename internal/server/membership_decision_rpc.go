@@ -51,6 +51,28 @@ func (s *GRPCServer) GetJoinDecision(
 	}
 
 	current := s.activeMembership
+
+	if s.pendingJoin != nil &&
+		*s.pendingJoin == current.Identity() {
+		if !s.writesPaused || !s.replicasPaused {
+			return nil, status.Error(
+				codes.FailedPrecondition,
+				"activated join is not paused",
+			)
+		}
+
+		previous, err := membership.LoadActivatedJoin(
+			s.joinPausePath, current,
+		)
+		if err != nil {
+			return nil, status.Errorf(
+				codes.FailedPrecondition,
+				"recover activated join decision: %v", err,
+			)
+		}
+		current = previous
+	}
+
 	if err := s.requireJoinCoordinator(current); err != nil {
 		return nil, err
 	}

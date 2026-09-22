@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/A-s-n55555/distributed-kv-store/internal/handoff"
 	"github.com/A-s-n55555/distributed-kv-store/internal/membership"
 	"github.com/A-s-n55555/distributed-kv-store/internal/server"
 	"github.com/A-s-n55555/distributed-kv-store/internal/store"
@@ -59,9 +60,17 @@ func loadStagingConfiguration(
 
 func runStagingJoin(
 	nodeID, address, dataDir, activeFile, candidateFile string,
+	tokenFile string,
+	readQuorum, writeQuorum int,
+	antiEntropyInterval time.Duration,
 ) error {
-	candidate, err := loadStagingConfiguration(
-		nodeID, address, activeFile, candidateFile,
+	if antiEntropyInterval <= 0 {
+		return fmt.Errorf("anti-entropy interval must be positive")
+	}
+	pausePath := filepath.Join(dataDir, nodeID, "membership-pause.json")
+
+	current, candidate, err := loadStagingJoinState(
+		nodeID, address, activeFile, candidateFile, pausePath,
 	)
 	if err != nil {
 		return err
@@ -79,13 +88,65 @@ func runStagingJoin(
 		return fmt.Errorf("recover staged records: %w", err)
 	}
 
-	target := server.New(
-		kvStore, nil, nodeID,
-		candidate.ReplicationFactor(), 0, 0, nil,
+	replicationFactor := candidate.ReplicationFactor()
+	if readQuorum < 1 || readQuorum > replicationFactor ||
+		writeQuorum < 1 || writeQuorum > replicationFactor {
+		return fmt.Errorf(
+			"read and write quorums must be between 1 and %d",
+			replicationFactor,
+		)
+	}
+
+	hintQueue, err := handoff.OpenQueue(
+		filepath.Join(dataDir, nodeID, "hints.log"),
 	)
+	if err != nil {
+		return fmt.Errorf("open staging hint queue: %w", err)
+	}
+	defer hintQueue.Close()
+
+	target := server.New(
+		kvStore,
+		candidate.Ring(),
+		nodeID,
+		replicationFactor,
+		readQuorum,
+		writeQuorum,
+		hintQueue,
+	)
+
+	if tokenFile != "" {
+		info, err := os.Stat(tokenFile)
+		if err != nil {
+			return fmt.Errorf("membership token file: %w", err)
+		}
+		if !info.Mode().IsRegular() || info.Mode().Perm()&0077 != 0 {
+			return fmt.Errorf(
+				"membership token must be a regular file accessible only by its owner",
+			)
+		}
+
+		data, err := os.ReadFile(tokenFile)
+		if err != nil {
+			return fmt.Errorf("read membership token: %w", err)
+		}
+		if err := target.ConfigureMembershipControlToken(
+			strings.TrimSpace(string(data)),
+		); err != nil {
+			return fmt.Errorf("configure staging membership control: %w", err)
+		}
+	}
+
 	stagingService, err := server.NewStagingService(target)
 	if err != nil {
 		return err
+	}
+
+	if err := stagingService.ConfigureJoin(current, candidate); err != nil {
+		return fmt.Errorf("configure staging join: %w", err)
+	}
+	if err := stagingService.ConfigurePromotion(pausePath); err != nil {
+		return fmt.Errorf("configure promotion recovery: %w", err)
 	}
 
 	listener, err := net.Listen("tcp", address)
@@ -101,6 +162,24 @@ func runStagingJoin(
 		context.Background(), os.Interrupt, syscall.SIGTERM,
 	)
 	defer stop()
+
+	workersDone := make(chan struct{})
+
+	go func() {
+		defer close(workersDone)
+
+		err := stagingService.RunPromotedWorkers(ctx, antiEntropyInterval)
+		if ctx.Err() == nil {
+			log.Printf("promoted-node workers stopped: %v", err)
+			stop()
+		}
+	}()
+
+	// Registered after the WAL/queue close defers, so workers exit first.
+	defer func() {
+		stop()
+		<-workersDone
+	}()
 
 	serveResult := make(chan error, 1)
 	go func() { serveResult <- grpcServer.Serve(listener) }()

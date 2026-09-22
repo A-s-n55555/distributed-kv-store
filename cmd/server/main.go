@@ -73,6 +73,9 @@ func main() {
 		if err := runStagingJoin(
 			*nodeID, *address, *dataDir,
 			*stagingActiveFile, *stagingCandidateFile,
+			*membershipTokenFile,
+			*readQuorum, *writeQuorum,
+			*antiEntropyInterval,
 		); err != nil {
 			log.Fatalf("staging join: %v", err)
 		}
@@ -125,8 +128,11 @@ func main() {
 	defer writeAheadLog.Close()
 
 	activePath := filepath.Join(*dataDir, *nodeID, "membership-active.json")
-	active, err := membership.LoadOrBootstrapActive(
+	pausePath := filepath.Join(*dataDir, *nodeID, "membership-pause.json")
+
+	active, err := membership.LoadJoinAwareActive(
 		activePath,
+		pausePath,
 		clusterRing,
 		*replicationFactor,
 		*bootstrapMembership,
@@ -134,6 +140,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("active membership: %v", err)
 	}
+	clusterRing = active.Ring()
 
 	localMember := false
 	for _, node := range active.Nodes() {
@@ -193,7 +200,7 @@ func main() {
 	if err := kvService.SetActiveMembership(active); err != nil {
 		log.Fatalf("configure server membership: %v", err)
 	}
-	pausePath := filepath.Join(*dataDir, *nodeID, "membership-pause.json")
+	// pausePath := filepath.Join(*dataDir, *nodeID, "membership-pause.json")
 	if err := kvService.ConfigureJoinPause(pausePath); err != nil {
 		log.Fatalf("restore join pause: %v", err)
 	}

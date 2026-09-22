@@ -35,6 +35,21 @@ service KeyValueStore {
 
   rpc GetJoinDecision(PrepareJoinPauseRequest)
     returns (JoinDecisionResponse);
+
+  rpc ActivateJoin(PrepareJoinPauseRequest)
+    returns (MembershipStatusResponse);
+
+  rpc PromoteJoin(PrepareJoinPauseRequest)
+    returns (PromotionStatusResponse);
+
+  rpc GetJoinResumeDecision(PrepareJoinPauseRequest)
+    returns (JoinResumeDecisionResponse);
+
+  rpc EnableJoinReplicas(PrepareJoinPauseRequest)
+    returns (MembershipStatusResponse);
+
+  rpc ReleaseJoinClients(PrepareJoinPauseRequest)
+    returns (MembershipStatusResponse);
 }
 
 
@@ -145,6 +160,9 @@ message MembershipStatusResponse {
   uint64 pending_epoch = 5;
   bytes pending_digest = 6;
   bool join_committed = 7;
+  bool replicas_ready = 8;
+  bool clients_released = 9;
+  
 }
 
 message PrepareJoinPauseRequest {
@@ -170,4 +188,19 @@ message JoinDecisionResponse {
   bytes candidate_digest = 5;
   JoinDecision decision = 6;
 }
-
+message PromotionStatusResponse {
+  string node_id = 1;
+  uint64 candidate_epoch = 2;
+  bytes candidate_digest = 3;
+  bool promotion_recorded = 4;
+  bool requests_paused = 5;
+}
+message JoinResumeDecisionResponse {
+  string coordinator_node_id = 1;
+  uint64 active_epoch = 2;
+  bytes active_digest = 3;
+  uint64 candidate_epoch = 4;
+  bytes candidate_digest = 5;
+  bool resume_decided = 6;
+  bool clients_release_decided = 7;
+}

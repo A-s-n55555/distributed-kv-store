@@ -64,10 +64,35 @@ func (s *GRPCServer) ConfigureJoinPause(path string) error {
 	}
 
 	candidate, err := membership.LoadJoinPause(path, s.activeMembership)
-	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return status.Errorf(codes.FailedPrecondition, "invalid saved join pause: %v", err)
-	}
 
+	previous, previousErr := membership.LoadPreviousJoin(path)
+	switch {
+	case previousErr == nil && previous.Identity() != s.activeMembership.Identity():
+		// An active file that advanced must have valid pause and commit
+		// markers. Any missing or corrupt marker prevents startup.
+		if _, recoveryErr := membership.LoadActivatedJoin(
+			path, s.activeMembership,
+		); recoveryErr != nil {
+			return status.Errorf(
+				codes.FailedPrecondition,
+				"invalid activated join: %v", recoveryErr,
+			)
+		}
+		candidate = s.activeMembership
+		err = nil
+
+	case previousErr != nil && !errors.Is(previousErr, os.ErrNotExist):
+		return status.Errorf(
+			codes.FailedPrecondition,
+			"invalid previous membership: %v", previousErr,
+		)
+
+	case err != nil && !errors.Is(err, os.ErrNotExist):
+		return status.Errorf(
+			codes.FailedPrecondition,
+			"invalid saved join pause: %v", err,
+		)
+	}
 	s.joinPausePath = path
 	if err == nil {
 		identity := candidate.Identity()
@@ -75,7 +100,7 @@ func (s *GRPCServer) ConfigureJoinPause(path string) error {
 		s.writesPaused = true
 		s.replicasPaused = true
 	}
-	return nil
+	return s.restoreReplicaReadinessLocked()
 }
 
 // PauseForJoin validates one proposed join, drains local write paths,
