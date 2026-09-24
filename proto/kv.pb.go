@@ -1591,8 +1591,7 @@ const file_proto_kv_proto_rawDesc = "" +
 	"\fJoinDecision\x12\x1b\n" +
 	"\x17JOIN_DECISION_UNDECIDED\x10\x00\x12\x18\n" +
 	"\x14JOIN_DECISION_COMMIT\x10\x01\x12\x17\n" +
-	"\x13JOIN_DECISION_ABORT\x10\x022\x8c\n" +
-	"\n" +
+	"\x13JOIN_DECISION_ABORT\x10\x022\x89\f\n" +
 	"\rKeyValueStore\x12&\n" +
 	"\x03Put\x12\x0e.kv.PutRequest\x1a\x0f.kv.PutResponse\x12&\n" +
 	"\x03Get\x12\x0e.kv.GetRequest\x1a\x0f.kv.GetResponse\x12/\n" +
@@ -1611,7 +1610,10 @@ const file_proto_kv_proto_rawDesc = "" +
 	"\vPromoteJoin\x12\x1b.kv.PrepareJoinPauseRequest\x1a\x1b.kv.PromotionStatusResponse\x12T\n" +
 	"\x15GetJoinResumeDecision\x12\x1b.kv.PrepareJoinPauseRequest\x1a\x1e.kv.JoinResumeDecisionResponse\x12O\n" +
 	"\x12EnableJoinReplicas\x12\x1b.kv.PrepareJoinPauseRequest\x1a\x1c.kv.MembershipStatusResponse\x12O\n" +
-	"\x12ReleaseJoinClients\x12\x1b.kv.PrepareJoinPauseRequest\x1a\x1c.kv.MembershipStatusResponseB7Z5github.com/A-s-n55555/distributed-kv-store/proto;kvpbb\x06proto3"
+	"\x12ReleaseJoinClients\x12\x1b.kv.PrepareJoinPauseRequest\x1a\x1c.kv.MembershipStatusResponse\x12Q\n" +
+	"\x14CoordinateJoinCommit\x12\x1b.kv.PrepareJoinPauseRequest\x1a\x1c.kv.MembershipStatusResponse\x12U\n" +
+	"\x18CoordinateJoinActivation\x12\x1b.kv.PrepareJoinPauseRequest\x1a\x1c.kv.MembershipStatusResponse\x12Q\n" +
+	"\x14CoordinateJoinResume\x12\x1b.kv.PrepareJoinPauseRequest\x1a\x1c.kv.MembershipStatusResponseB7Z5github.com/A-s-n55555/distributed-kv-store/proto;kvpbb\x06proto3"
 
 var (
 	file_proto_kv_proto_rawDescOnce sync.Once
@@ -1685,26 +1687,32 @@ var file_proto_kv_proto_depIdxs = []int32{
 	20, // 25: kv.KeyValueStore.GetJoinResumeDecision:input_type -> kv.PrepareJoinPauseRequest
 	20, // 26: kv.KeyValueStore.EnableJoinReplicas:input_type -> kv.PrepareJoinPauseRequest
 	20, // 27: kv.KeyValueStore.ReleaseJoinClients:input_type -> kv.PrepareJoinPauseRequest
-	2,  // 28: kv.KeyValueStore.Put:output_type -> kv.PutResponse
-	4,  // 29: kv.KeyValueStore.Get:output_type -> kv.GetResponse
-	6,  // 30: kv.KeyValueStore.Delete:output_type -> kv.DeleteResponse
-	9,  // 31: kv.KeyValueStore.ApplyReplicaRecord:output_type -> kv.ReplicaRecordResponse
-	10, // 32: kv.KeyValueStore.ReadReplicaRecord:output_type -> kv.ReplicaRecordReadResponse
-	12, // 33: kv.KeyValueStore.Resolve:output_type -> kv.ResolveResponse
-	14, // 34: kv.KeyValueStore.AntiEntropySummary:output_type -> kv.AntiEntropySummaryResponse
-	17, // 35: kv.KeyValueStore.AntiEntropyBucket:output_type -> kv.AntiEntropyBucketResponse
-	19, // 36: kv.KeyValueStore.GetMembershipStatus:output_type -> kv.MembershipStatusResponse
-	19, // 37: kv.KeyValueStore.PrepareJoinPause:output_type -> kv.MembershipStatusResponse
-	19, // 38: kv.KeyValueStore.AbortJoinPause:output_type -> kv.MembershipStatusResponse
-	19, // 39: kv.KeyValueStore.CommitJoinPause:output_type -> kv.MembershipStatusResponse
-	21, // 40: kv.KeyValueStore.GetJoinDecision:output_type -> kv.JoinDecisionResponse
-	19, // 41: kv.KeyValueStore.ActivateJoin:output_type -> kv.MembershipStatusResponse
-	22, // 42: kv.KeyValueStore.PromoteJoin:output_type -> kv.PromotionStatusResponse
-	23, // 43: kv.KeyValueStore.GetJoinResumeDecision:output_type -> kv.JoinResumeDecisionResponse
-	19, // 44: kv.KeyValueStore.EnableJoinReplicas:output_type -> kv.MembershipStatusResponse
-	19, // 45: kv.KeyValueStore.ReleaseJoinClients:output_type -> kv.MembershipStatusResponse
-	28, // [28:46] is the sub-list for method output_type
-	10, // [10:28] is the sub-list for method input_type
+	20, // 28: kv.KeyValueStore.CoordinateJoinCommit:input_type -> kv.PrepareJoinPauseRequest
+	20, // 29: kv.KeyValueStore.CoordinateJoinActivation:input_type -> kv.PrepareJoinPauseRequest
+	20, // 30: kv.KeyValueStore.CoordinateJoinResume:input_type -> kv.PrepareJoinPauseRequest
+	2,  // 31: kv.KeyValueStore.Put:output_type -> kv.PutResponse
+	4,  // 32: kv.KeyValueStore.Get:output_type -> kv.GetResponse
+	6,  // 33: kv.KeyValueStore.Delete:output_type -> kv.DeleteResponse
+	9,  // 34: kv.KeyValueStore.ApplyReplicaRecord:output_type -> kv.ReplicaRecordResponse
+	10, // 35: kv.KeyValueStore.ReadReplicaRecord:output_type -> kv.ReplicaRecordReadResponse
+	12, // 36: kv.KeyValueStore.Resolve:output_type -> kv.ResolveResponse
+	14, // 37: kv.KeyValueStore.AntiEntropySummary:output_type -> kv.AntiEntropySummaryResponse
+	17, // 38: kv.KeyValueStore.AntiEntropyBucket:output_type -> kv.AntiEntropyBucketResponse
+	19, // 39: kv.KeyValueStore.GetMembershipStatus:output_type -> kv.MembershipStatusResponse
+	19, // 40: kv.KeyValueStore.PrepareJoinPause:output_type -> kv.MembershipStatusResponse
+	19, // 41: kv.KeyValueStore.AbortJoinPause:output_type -> kv.MembershipStatusResponse
+	19, // 42: kv.KeyValueStore.CommitJoinPause:output_type -> kv.MembershipStatusResponse
+	21, // 43: kv.KeyValueStore.GetJoinDecision:output_type -> kv.JoinDecisionResponse
+	19, // 44: kv.KeyValueStore.ActivateJoin:output_type -> kv.MembershipStatusResponse
+	22, // 45: kv.KeyValueStore.PromoteJoin:output_type -> kv.PromotionStatusResponse
+	23, // 46: kv.KeyValueStore.GetJoinResumeDecision:output_type -> kv.JoinResumeDecisionResponse
+	19, // 47: kv.KeyValueStore.EnableJoinReplicas:output_type -> kv.MembershipStatusResponse
+	19, // 48: kv.KeyValueStore.ReleaseJoinClients:output_type -> kv.MembershipStatusResponse
+	19, // 49: kv.KeyValueStore.CoordinateJoinCommit:output_type -> kv.MembershipStatusResponse
+	19, // 50: kv.KeyValueStore.CoordinateJoinActivation:output_type -> kv.MembershipStatusResponse
+	19, // 51: kv.KeyValueStore.CoordinateJoinResume:output_type -> kv.MembershipStatusResponse
+	31, // [31:52] is the sub-list for method output_type
+	10, // [10:31] is the sub-list for method input_type
 	10, // [10:10] is the sub-list for extension type_name
 	10, // [10:10] is the sub-list for extension extendee
 	0,  // [0:10] is the sub-list for field type_name

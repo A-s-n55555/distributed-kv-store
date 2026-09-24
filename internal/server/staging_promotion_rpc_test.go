@@ -265,10 +265,28 @@ func TestStagingPromotionRPCAndRecovery(t *testing.T) {
 		}
 	}
 
-	// Resume must skip the earlier phase and finish the partial release.
+	coordinatorConnection, err := grpc.NewClient(
+		firstAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer coordinatorConnection.Close()
+
+	coordinatorClient := kvpb.NewKeyValueStoreClient(coordinatorConnection)
+
 	for attempt := 0; attempt < 2; attempt++ {
-		if err := first.resumeActivatedJoin(ctx, candidate); err != nil {
-			t.Fatalf("resume attempt %d: %v", attempt+1, err)
+		observed, err := coordinatorClient.CoordinateJoinResume(
+			authorized, request,
+		)
+		if err != nil {
+			t.Fatalf("resume RPC attempt %d: %v", attempt+1, err)
+		}
+		if !confirmsJoinClientsReleased(
+			observed, first.nodeID, candidateID,
+		) {
+			t.Fatalf("coordinator did not confirm release: %v", observed)
 		}
 	}
 
@@ -337,10 +355,11 @@ func TestStagingPromotionRPCAndRecovery(t *testing.T) {
 	recoveredClient := kvpb.NewKeyValueStoreClient(recoveredConnection)
 
 	// Retrying the completed phase must also accept the recovered member.
-	if err := first.resumeActivatedJoin(ctx, candidate); err != nil {
-		t.Fatalf("resume retry after recovery: %v", err)
+	if _, err := coordinatorClient.CoordinateJoinResume(
+		authorized, request,
+	); err != nil {
+		t.Fatalf("resume RPC retry after recovery: %v", err)
 	}
-
 	// Verify fresh client traffic after membership recovery.
 	if _, err := recoveredClient.Put(
 		ctx,

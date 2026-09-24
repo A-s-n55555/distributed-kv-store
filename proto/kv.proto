@@ -50,6 +50,15 @@ service KeyValueStore {
 
   rpc ReleaseJoinClients(PrepareJoinPauseRequest)
     returns (MembershipStatusResponse);
+
+  rpc CoordinateJoinCommit(PrepareJoinPauseRequest)
+    returns (MembershipStatusResponse);
+
+  rpc CoordinateJoinActivation(PrepareJoinPauseRequest)
+    returns (MembershipStatusResponse);
+
+  rpc CoordinateJoinResume(PrepareJoinPauseRequest)
+  returns (MembershipStatusResponse);
 }
 
 

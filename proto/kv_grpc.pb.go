@@ -19,24 +19,27 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	KeyValueStore_Put_FullMethodName                   = "/kv.KeyValueStore/Put"
-	KeyValueStore_Get_FullMethodName                   = "/kv.KeyValueStore/Get"
-	KeyValueStore_Delete_FullMethodName                = "/kv.KeyValueStore/Delete"
-	KeyValueStore_ApplyReplicaRecord_FullMethodName    = "/kv.KeyValueStore/ApplyReplicaRecord"
-	KeyValueStore_ReadReplicaRecord_FullMethodName     = "/kv.KeyValueStore/ReadReplicaRecord"
-	KeyValueStore_Resolve_FullMethodName               = "/kv.KeyValueStore/Resolve"
-	KeyValueStore_AntiEntropySummary_FullMethodName    = "/kv.KeyValueStore/AntiEntropySummary"
-	KeyValueStore_AntiEntropyBucket_FullMethodName     = "/kv.KeyValueStore/AntiEntropyBucket"
-	KeyValueStore_GetMembershipStatus_FullMethodName   = "/kv.KeyValueStore/GetMembershipStatus"
-	KeyValueStore_PrepareJoinPause_FullMethodName      = "/kv.KeyValueStore/PrepareJoinPause"
-	KeyValueStore_AbortJoinPause_FullMethodName        = "/kv.KeyValueStore/AbortJoinPause"
-	KeyValueStore_CommitJoinPause_FullMethodName       = "/kv.KeyValueStore/CommitJoinPause"
-	KeyValueStore_GetJoinDecision_FullMethodName       = "/kv.KeyValueStore/GetJoinDecision"
-	KeyValueStore_ActivateJoin_FullMethodName          = "/kv.KeyValueStore/ActivateJoin"
-	KeyValueStore_PromoteJoin_FullMethodName           = "/kv.KeyValueStore/PromoteJoin"
-	KeyValueStore_GetJoinResumeDecision_FullMethodName = "/kv.KeyValueStore/GetJoinResumeDecision"
-	KeyValueStore_EnableJoinReplicas_FullMethodName    = "/kv.KeyValueStore/EnableJoinReplicas"
-	KeyValueStore_ReleaseJoinClients_FullMethodName    = "/kv.KeyValueStore/ReleaseJoinClients"
+	KeyValueStore_Put_FullMethodName                      = "/kv.KeyValueStore/Put"
+	KeyValueStore_Get_FullMethodName                      = "/kv.KeyValueStore/Get"
+	KeyValueStore_Delete_FullMethodName                   = "/kv.KeyValueStore/Delete"
+	KeyValueStore_ApplyReplicaRecord_FullMethodName       = "/kv.KeyValueStore/ApplyReplicaRecord"
+	KeyValueStore_ReadReplicaRecord_FullMethodName        = "/kv.KeyValueStore/ReadReplicaRecord"
+	KeyValueStore_Resolve_FullMethodName                  = "/kv.KeyValueStore/Resolve"
+	KeyValueStore_AntiEntropySummary_FullMethodName       = "/kv.KeyValueStore/AntiEntropySummary"
+	KeyValueStore_AntiEntropyBucket_FullMethodName        = "/kv.KeyValueStore/AntiEntropyBucket"
+	KeyValueStore_GetMembershipStatus_FullMethodName      = "/kv.KeyValueStore/GetMembershipStatus"
+	KeyValueStore_PrepareJoinPause_FullMethodName         = "/kv.KeyValueStore/PrepareJoinPause"
+	KeyValueStore_AbortJoinPause_FullMethodName           = "/kv.KeyValueStore/AbortJoinPause"
+	KeyValueStore_CommitJoinPause_FullMethodName          = "/kv.KeyValueStore/CommitJoinPause"
+	KeyValueStore_GetJoinDecision_FullMethodName          = "/kv.KeyValueStore/GetJoinDecision"
+	KeyValueStore_ActivateJoin_FullMethodName             = "/kv.KeyValueStore/ActivateJoin"
+	KeyValueStore_PromoteJoin_FullMethodName              = "/kv.KeyValueStore/PromoteJoin"
+	KeyValueStore_GetJoinResumeDecision_FullMethodName    = "/kv.KeyValueStore/GetJoinResumeDecision"
+	KeyValueStore_EnableJoinReplicas_FullMethodName       = "/kv.KeyValueStore/EnableJoinReplicas"
+	KeyValueStore_ReleaseJoinClients_FullMethodName       = "/kv.KeyValueStore/ReleaseJoinClients"
+	KeyValueStore_CoordinateJoinCommit_FullMethodName     = "/kv.KeyValueStore/CoordinateJoinCommit"
+	KeyValueStore_CoordinateJoinActivation_FullMethodName = "/kv.KeyValueStore/CoordinateJoinActivation"
+	KeyValueStore_CoordinateJoinResume_FullMethodName     = "/kv.KeyValueStore/CoordinateJoinResume"
 )
 
 // KeyValueStoreClient is the client API for KeyValueStore service.
@@ -61,6 +64,9 @@ type KeyValueStoreClient interface {
 	GetJoinResumeDecision(ctx context.Context, in *PrepareJoinPauseRequest, opts ...grpc.CallOption) (*JoinResumeDecisionResponse, error)
 	EnableJoinReplicas(ctx context.Context, in *PrepareJoinPauseRequest, opts ...grpc.CallOption) (*MembershipStatusResponse, error)
 	ReleaseJoinClients(ctx context.Context, in *PrepareJoinPauseRequest, opts ...grpc.CallOption) (*MembershipStatusResponse, error)
+	CoordinateJoinCommit(ctx context.Context, in *PrepareJoinPauseRequest, opts ...grpc.CallOption) (*MembershipStatusResponse, error)
+	CoordinateJoinActivation(ctx context.Context, in *PrepareJoinPauseRequest, opts ...grpc.CallOption) (*MembershipStatusResponse, error)
+	CoordinateJoinResume(ctx context.Context, in *PrepareJoinPauseRequest, opts ...grpc.CallOption) (*MembershipStatusResponse, error)
 }
 
 type keyValueStoreClient struct {
@@ -251,6 +257,36 @@ func (c *keyValueStoreClient) ReleaseJoinClients(ctx context.Context, in *Prepar
 	return out, nil
 }
 
+func (c *keyValueStoreClient) CoordinateJoinCommit(ctx context.Context, in *PrepareJoinPauseRequest, opts ...grpc.CallOption) (*MembershipStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MembershipStatusResponse)
+	err := c.cc.Invoke(ctx, KeyValueStore_CoordinateJoinCommit_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *keyValueStoreClient) CoordinateJoinActivation(ctx context.Context, in *PrepareJoinPauseRequest, opts ...grpc.CallOption) (*MembershipStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MembershipStatusResponse)
+	err := c.cc.Invoke(ctx, KeyValueStore_CoordinateJoinActivation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *keyValueStoreClient) CoordinateJoinResume(ctx context.Context, in *PrepareJoinPauseRequest, opts ...grpc.CallOption) (*MembershipStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MembershipStatusResponse)
+	err := c.cc.Invoke(ctx, KeyValueStore_CoordinateJoinResume_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KeyValueStoreServer is the server API for KeyValueStore service.
 // All implementations must embed UnimplementedKeyValueStoreServer
 // for forward compatibility.
@@ -273,6 +309,9 @@ type KeyValueStoreServer interface {
 	GetJoinResumeDecision(context.Context, *PrepareJoinPauseRequest) (*JoinResumeDecisionResponse, error)
 	EnableJoinReplicas(context.Context, *PrepareJoinPauseRequest) (*MembershipStatusResponse, error)
 	ReleaseJoinClients(context.Context, *PrepareJoinPauseRequest) (*MembershipStatusResponse, error)
+	CoordinateJoinCommit(context.Context, *PrepareJoinPauseRequest) (*MembershipStatusResponse, error)
+	CoordinateJoinActivation(context.Context, *PrepareJoinPauseRequest) (*MembershipStatusResponse, error)
+	CoordinateJoinResume(context.Context, *PrepareJoinPauseRequest) (*MembershipStatusResponse, error)
 	mustEmbedUnimplementedKeyValueStoreServer()
 }
 
@@ -336,6 +375,15 @@ func (UnimplementedKeyValueStoreServer) EnableJoinReplicas(context.Context, *Pre
 }
 func (UnimplementedKeyValueStoreServer) ReleaseJoinClients(context.Context, *PrepareJoinPauseRequest) (*MembershipStatusResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReleaseJoinClients not implemented")
+}
+func (UnimplementedKeyValueStoreServer) CoordinateJoinCommit(context.Context, *PrepareJoinPauseRequest) (*MembershipStatusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CoordinateJoinCommit not implemented")
+}
+func (UnimplementedKeyValueStoreServer) CoordinateJoinActivation(context.Context, *PrepareJoinPauseRequest) (*MembershipStatusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CoordinateJoinActivation not implemented")
+}
+func (UnimplementedKeyValueStoreServer) CoordinateJoinResume(context.Context, *PrepareJoinPauseRequest) (*MembershipStatusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CoordinateJoinResume not implemented")
 }
 func (UnimplementedKeyValueStoreServer) mustEmbedUnimplementedKeyValueStoreServer() {}
 func (UnimplementedKeyValueStoreServer) testEmbeddedByValue()                       {}
@@ -682,6 +730,60 @@ func _KeyValueStore_ReleaseJoinClients_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KeyValueStore_CoordinateJoinCommit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PrepareJoinPauseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeyValueStoreServer).CoordinateJoinCommit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KeyValueStore_CoordinateJoinCommit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeyValueStoreServer).CoordinateJoinCommit(ctx, req.(*PrepareJoinPauseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KeyValueStore_CoordinateJoinActivation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PrepareJoinPauseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeyValueStoreServer).CoordinateJoinActivation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KeyValueStore_CoordinateJoinActivation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeyValueStoreServer).CoordinateJoinActivation(ctx, req.(*PrepareJoinPauseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KeyValueStore_CoordinateJoinResume_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PrepareJoinPauseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeyValueStoreServer).CoordinateJoinResume(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KeyValueStore_CoordinateJoinResume_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeyValueStoreServer).CoordinateJoinResume(ctx, req.(*PrepareJoinPauseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KeyValueStore_ServiceDesc is the grpc.ServiceDesc for KeyValueStore service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -760,6 +862,18 @@ var KeyValueStore_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReleaseJoinClients",
 			Handler:    _KeyValueStore_ReleaseJoinClients_Handler,
+		},
+		{
+			MethodName: "CoordinateJoinCommit",
+			Handler:    _KeyValueStore_CoordinateJoinCommit_Handler,
+		},
+		{
+			MethodName: "CoordinateJoinActivation",
+			Handler:    _KeyValueStore_CoordinateJoinActivation_Handler,
+		},
+		{
+			MethodName: "CoordinateJoinResume",
+			Handler:    _KeyValueStore_CoordinateJoinResume_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

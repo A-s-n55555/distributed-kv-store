@@ -10,7 +10,10 @@ import (
 	"github.com/A-s-n55555/distributed-kv-store/internal/membership"
 	"github.com/A-s-n55555/distributed-kv-store/internal/ring"
 	kvpb "github.com/A-s-n55555/distributed-kv-store/proto"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -95,9 +98,42 @@ func TestActivateOldMembersRetriesPartialActivation(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	connection, err := grpc.NewClient(
+		firstAddress,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer connection.Close()
+
+	oldID, candidateID := current.Identity(), candidate.Identity()
+	request := &kvpb.PrepareJoinPauseRequest{
+		ActiveEpoch:        oldID.Epoch,
+		ActiveDigest:       append([]byte(nil), oldID.Digest[:]...),
+		CandidateEpoch:     candidateID.Epoch,
+		CandidateDigest:    append([]byte(nil), candidateID.Digest[:]...),
+		JoiningNodeId:      "node-3",
+		JoiningNodeAddress: "127.0.0.1:50053",
+	}
+	client := kvpb.NewKeyValueStoreClient(connection)
+
+	if _, err := client.CoordinateJoinActivation(
+		ctx, request,
+	); status.Code(err) != codes.PermissionDenied {
+		t.Fatalf("unauthorized activation: got %v, want PermissionDenied", err)
+	}
+
+	authorized := metadata.AppendToOutgoingContext(
+		ctx, membershipControlTokenHeader, strings.Repeat("ab", 32),
+	)
 	for attempt := 0; attempt < 2; attempt++ {
-		if err := first.activateOldMembersForJoin(ctx, candidate); err != nil {
-			t.Fatalf("activation attempt %d: %v", attempt+1, err)
+		response, err := client.CoordinateJoinActivation(authorized, request)
+		if err != nil {
+			t.Fatalf("activation RPC attempt %d: %v", attempt+1, err)
+		}
+		if !confirmsJoinActivation(response, first.nodeID, candidateID) {
+			t.Fatalf("coordinator did not confirm activation: %v", response)
 		}
 	}
 

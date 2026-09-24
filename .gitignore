@@ -6,6 +6,7 @@ bin/
 # Runtime data
 data/
 *.log
+data-before-live-join/
 
 # IDE
 .vscode/
